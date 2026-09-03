@@ -1,0 +1,907 @@
+{
+  "openapi": "3.1.0",
+  "paths": {
+    "/users": {
+      "get": {
+        "operationId": "UsersController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "All users (admin only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDto_Output"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "users"
+        ]
+      },
+      "post": {
+        "operationId": "UsersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Create a user (admin only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/{id}/tokens": {
+      "post": {
+        "operationId": "UsersController_mintToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedTokenDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mint a token for a user (admin only). How a new user gets their first token; afterwards they mint their own",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/me": {
+      "get": {
+        "operationId": "TokensController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Who the bearer token belongs to",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "tokens"
+        ]
+      }
+    },
+    "/tokens": {
+      "get": {
+        "operationId": "TokensController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The caller's own tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TokenDto_Output"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "tokens"
+        ]
+      },
+      "post": {
+        "operationId": "TokensController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mint a token for the caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedTokenDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "tokens"
+        ]
+      }
+    },
+    "/tokens/{id}": {
+      "delete": {
+        "operationId": "TokensController_revoke",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revoke one of the caller's tokens, or any token as admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokedDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "tokens"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "HealthController_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/sessions": {
+      "post": {
+        "operationId": "SessionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a session: a fresh sandbox with its own checkout and branch",
+        "tags": [
+          "sessions"
+        ]
+      },
+      "get": {
+        "operationId": "SessionsController_list",
+        "parameters": [
+          {
+            "name": "all",
+            "required": false,
+            "in": "query",
+            "description": "Include closed, expired and failed sessions",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "user",
+            "required": false,
+            "in": "query",
+            "description": "Only sessions created by this user id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SessionDto_Output"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List sessions. Active ones by default; every user's sessions are visible",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/sessions/{id}": {
+      "get": {
+        "operationId": "SessionsController_show",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Show one session",
+        "tags": [
+          "sessions"
+        ]
+      },
+      "delete": {
+        "operationId": "SessionsController_close",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Close a session: remove its sandbox and workspace. Unpushed work is discarded",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/sessions/{id}/exec": {
+      "post": {
+        "operationId": "SessionsController_exec",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecResultDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Run a shell command in the session's sandbox. A non-zero exit code is a successful call",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/sessions/{id}/exec/stdin": {
+      "post": {
+        "operationId": "SessionsController_execStdin",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-kb-command",
+            "required": true,
+            "in": "header",
+            "description": "The command, percent-encoded (encodeURIComponent)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-kb-cwd",
+            "required": false,
+            "in": "header",
+            "description": "Working directory relative to /workspace",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-kb-timeout-ms",
+            "required": false,
+            "in": "header",
+            "description": "Timeout in milliseconds",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecResultDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Run a shell command with the request body streamed to its stdin. Command and options travel in headers",
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/sessions/{id}/log": {
+      "get": {
+        "operationId": "SessionsController_log",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit events in order",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEventDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEventDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The session's audit log, one JSON object per line (application/x-ndjson). Add ?format=json for an array",
+        "tags": [
+          "sessions"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "kb orchestrator",
+    "description": "Sessions, exec and administration for the shared agent knowledge base. Every route except /health needs a bearer token.",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "UserDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "admin": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "admin",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Lowercase letters, digits, '.', '_' or '-'"
+          },
+          "admin": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateTokenDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "What this token is for, e.g. claude-code-laptop"
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "CreatedTokenDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "last_used_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "revoked_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "token": {
+            "type": "string",
+            "description": "The plaintext token. Shown once."
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "created_at",
+          "last_used_at",
+          "revoked_at",
+          "token"
+        ],
+        "additionalProperties": false
+      },
+      "MeDto_Output": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "admin": {
+            "type": "boolean"
+          },
+          "token": {
+            "type": "string",
+            "description": "Label of the token in use"
+          }
+        },
+        "required": [
+          "user",
+          "user_id",
+          "admin",
+          "token"
+        ],
+        "additionalProperties": false
+      },
+      "TokenDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "last_used_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "revoked_at": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "created_at",
+          "last_used_at",
+          "revoked_at"
+        ],
+        "additionalProperties": false
+      },
+      "RevokedDto_Output": {
+        "type": "object",
+        "properties": {
+          "revoked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "revoked"
+        ],
+        "additionalProperties": false
+      },
+      "CreateSessionDto": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "description": "What this session is for, one line",
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      },
+      "SessionDto_Output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "created",
+              "active",
+              "closed",
+              "expired",
+              "failed"
+            ]
+          },
+          "branch": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string",
+            "description": "Name of the user who created the session"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "token_label": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string",
+            "nullable": true
+          },
+          "base_commit": {
+            "type": "string",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "last_activity_at": {
+            "type": "string"
+          },
+          "closed_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "close_reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "branch",
+          "user",
+          "user_id",
+          "token_label",
+          "purpose",
+          "base_commit",
+          "created_at",
+          "last_activity_at",
+          "closed_at",
+          "close_reason"
+        ],
+        "additionalProperties": false
+      },
+      "ExecDto": {
+        "type": "object",
+        "properties": {
+          "cwd": {
+            "description": "Working directory relative to /workspace",
+            "type": "string"
+          },
+          "timeout_ms": {
+            "description": "Default 60000",
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 600000
+          },
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Shell command, run with sh -c"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "ExecResultDto_Output": {
+        "type": "object",
+        "properties": {
+          "stdout": {
+            "type": "string"
+          },
+          "stderr": {
+            "type": "string"
+          },
+          "exit_code": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "stdin_bytes": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Output exceeded the cap and was cut"
+          }
+        },
+        "required": [
+          "stdout",
+          "stderr",
+          "exit_code",
+          "duration_ms",
+          "stdin_bytes",
+          "truncated"
+        ],
+        "additionalProperties": false
+      },
+      "AuditEventDto": {
+        "type": "object",
+        "properties": {
+          "ts": {
+            "type": "string"
+          },
+          "session": {
+            "type": "string"
+          },
+          "op": {
+            "type": "string",
+            "enum": [
+              "create",
+              "exec",
+              "push",
+              "close",
+              "reap",
+              "fail"
+            ]
+          }
+        },
+        "required": [
+          "ts",
+          "session",
+          "op"
+        ]
+      }
+    }
+  }
+}

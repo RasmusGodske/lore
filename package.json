@@ -1,0 +1,10 @@
+{
+  "name": "kb",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "npm run build -w packages/server -w packages/cli",
+    "test": "npm test -w packages/server -w packages/cli",
+    "openapi": "npm run openapi -w packages/server && npm run generate -w packages/cli"
+  }
+}

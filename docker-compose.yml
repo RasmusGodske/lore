@@ -1,0 +1,40 @@
+# Local development. On the VM the same shape applies with KB_SANDBOX_RUNTIME=runsc.
+services:
+  orchestrator:
+    build:
+      context: .
+      dockerfile: packages/server/Dockerfile
+    image: kb-orchestrator:latest
+    container_name: kb-orchestrator
+    restart: unless-stopped
+    ports:
+      - "${KB_PUBLIC_PORT:-8480}:8080"
+    environment:
+      KB_DATA_DIR: /srv/kb
+      KB_HOST_DATA_DIR: ${KB_HOST_DATA_DIR:-${PWD}/data}
+      KB_SANDBOX_RUNTIME: ${KB_SANDBOX_RUNTIME:-runc}
+      KB_SANDBOX_NETWORK: kb-net
+      KB_ORCHESTRATOR_HOST: kb-orchestrator
+      KB_LOG_LEVEL: ${KB_LOG_LEVEL:-info}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${KB_HOST_DATA_DIR:-${PWD}/data}:/srv/kb
+    networks:
+      - default
+      - kb-net
+    depends_on:
+      sandbox-image:
+        condition: service_completed_successfully
+
+  # Builds the sandbox image and exits; sessions run from kb-sandbox:latest.
+  sandbox-image:
+    build: ./sandbox
+    image: kb-sandbox:latest
+    command: ["true"]
+    restart: "no"
+
+networks:
+  default: {}
+  kb-net:
+    name: kb-net
+    internal: true
