@@ -12,7 +12,7 @@ export function redactUrl(url: string): string {
 export type RefreshPlan =
   | { kind: "none" }                          // already equal, or nothing on either side
   | { kind: "fast-forward"; to: string }      // remote is ahead: move local main to it
-  | { kind: "push-local"; sha: string }       // remote has no main yet: adopt lore's history
+  | { kind: "push-local"; sha: string }       // remote has no main, or is behind: push lore's main
   | { kind: "diverged" };                     // both moved independently: an operator must reconcile
 
 export function planRefresh(local: string | null, remote: string | null, isAncestor: (a: string, b: string) => boolean): RefreshPlan {
@@ -21,6 +21,7 @@ export function planRefresh(local: string | null, remote: string | null, isAnces
   if (!local) return { kind: "fast-forward", to: remote };
   if (local === remote) return { kind: "none" };
   if (isAncestor(local, remote)) return { kind: "fast-forward", to: remote };
+  if (isAncestor(remote, local)) return { kind: "push-local", sha: local };
   return { kind: "diverged" };
 }
 

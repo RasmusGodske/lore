@@ -79,11 +79,14 @@ if (remoteUrl) {
   }
   const remoteMain = f.ok ? git(["rev-parse", "refs/remotes/lore-remote/main"]).out : null;
   if (remoteMain && remoteMain !== mainSha) {
-    if (mainSha && !isAncestor(mainSha, remoteMain)) {
+    if (!mainSha || isAncestor(mainSha, remoteMain)) {
+      // The remote is ahead (someone edited there): follow it.
+      if (git(["update-ref", "refs/heads/main", remoteMain, ...(mainSha ? [mainSha] : [])]).ok) mainSha = remoteMain;
+    } else if (!isAncestor(remoteMain, mainSha)) {
       say("the remote repository and this server have diverged; an operator must reconcile them before anything can land.");
       process.exit(1);
     }
-    if (git(["update-ref", "refs/heads/main", remoteMain, ...(mainSha ? [mainSha] : [])]).ok) mainSha = remoteMain;
+    // else: the remote is behind local main; the landing push below carries it forward.
   }
 }
 

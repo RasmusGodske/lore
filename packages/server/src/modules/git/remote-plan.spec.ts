@@ -19,6 +19,9 @@ describe("remote refresh", () => {
   it("takes the remote when lore has nothing yet", () => {
     assert.deepEqual(planRefresh(null, B, ancestry({})), { kind: "fast-forward", to: B });
   });
+  it("pushes lore's main when the remote is behind (a standalone server that was given a remote)", () => {
+    assert.deepEqual(planRefresh(B, A, ancestry({ [B]: [A] })), { kind: "push-local", sha: B });
+  });
   it("refuses to guess when both moved independently", () => {
     assert.deepEqual(planRefresh(A, B, ancestry({})), { kind: "diverged" });
   });

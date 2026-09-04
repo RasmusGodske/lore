@@ -125,13 +125,10 @@ export class GitRepoService implements OnModuleInit {
     const remote = await this.fetchRemoteMain();
     const local = await this.refSha("refs/heads/main");
     const repo = this.config.repoPath;
-    let plan: RefreshPlan;
-    if (local && remote && local !== remote) {
-      const anc = (await git(["--git-dir", repo, "merge-base", "--is-ancestor", local, remote])).code === 0;
-      plan = planRefresh(local, remote, () => anc);
-    } else {
-      plan = planRefresh(local, remote, () => false);
-    }
+    const isAncestor = async (a: string, b: string) => (await git(["--git-dir", repo, "merge-base", "--is-ancestor", a, b])).code === 0;
+    const localInRemote = local && remote && local !== remote ? await isAncestor(local, remote) : false;
+    const remoteInLocal = local && remote && local !== remote ? await isAncestor(remote, local) : false;
+    const plan: RefreshPlan = planRefresh(local, remote, (a, b) => (a === local && b === remote ? localInRemote : remoteInLocal));
     if (plan.kind === "fast-forward") {
       const count = local ? Number((await git(["--git-dir", repo, "rev-list", "--count", `${local}..${plan.to}`])).stdout.trim() || 0) : 1;
       await gitOrThrow(["--git-dir", repo, "update-ref", "refs/heads/main", plan.to, ...(local ? [local] : [])]);
