@@ -22,7 +22,7 @@ const codeForStatus = (status: number, fallback: number): CliError["code"] => {
 };
 
 /** Thin typed client over the orchestrator's HTTP API. Nothing but fetch. */
-export class KbClient {
+export class LoreClient {
   constructor(private readonly url: string, private readonly token: string) {}
 
   private async request<T>(method: string, path: string, init: { json?: unknown; body?: Readable; headers?: Record<string, string>; raw?: boolean } = {}): Promise<T> {
@@ -34,7 +34,9 @@ export class KbClient {
     try {
       res = await fetch(this.url + path, { method, headers, body, ...(init.body ? { duplex: "half" } as any : {}) });
     } catch (e) {
-      throw new CliError(100, `connection error: could not reach orchestrator at ${this.url} (${(e as Error).message})`);
+      const cause = (e as { cause?: { code?: string; message?: string } }).cause;
+      const detail = cause?.code || cause?.message || (e as Error).message;
+      throw new CliError(100, `connection error: could not reach orchestrator at ${this.url} (${detail})`);
     }
     const text = await res.text();
     if (!res.ok) {
@@ -60,9 +62,9 @@ export class KbClient {
   closeSession(id: string) { return this.request<Session>("DELETE", `/sessions/${encodeURIComponent(id)}`); }
   exec(id: string, body: ExecBody) { return this.request<ExecResult>("POST", `/sessions/${encodeURIComponent(id)}/exec`, { json: body }); }
   execStdin(id: string, command: string, stdin: Readable, opts: { cwd?: string; timeout_ms?: number } = {}) {
-    const headers: Record<string, string> = { "x-kb-command": encodeURIComponent(command) };
-    if (opts.cwd) headers["x-kb-cwd"] = opts.cwd;
-    if (opts.timeout_ms) headers["x-kb-timeout-ms"] = String(opts.timeout_ms);
+    const headers: Record<string, string> = { "x-lore-command": encodeURIComponent(command) };
+    if (opts.cwd) headers["x-lore-cwd"] = opts.cwd;
+    if (opts.timeout_ms) headers["x-lore-timeout-ms"] = String(opts.timeout_ms);
     return this.request<ExecResult>("POST", `/sessions/${encodeURIComponent(id)}/exec/stdin`, { body: stdin, headers });
   }
   sessionLog(id: string) { return this.request<string>("GET", `/sessions/${encodeURIComponent(id)}/log`, { raw: true }); }

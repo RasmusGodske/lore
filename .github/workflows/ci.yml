@@ -1,0 +1,41 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build
+      - name: contract is up to date
+        run: |
+          (cd packages/server && LORE_DATA_DIR=/tmp/lore node --disable-warning=ExperimentalWarning dist/openapi.js > /tmp/openapi.json)
+          diff -q openapi.json /tmp/openapi.json || { echo "openapi.json is stale: run npm run openapi"; exit 1; }
+      - run: npm test
+      - name: images build
+        run: docker compose build
+
+  stack:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci && npm run build
+      - name: start the stack
+        run: |
+          docker compose up -d --build
+          for i in $(seq 1 30); do curl -sf http://localhost:8480/health && break; sleep 2; done
+          docker compose exec -T orchestrator lore-admin user create ci --admin
+          docker compose exec -T orchestrator lore-admin token create ci ci | tr -d '\r' > data/.token-dev
+      - name: stack tier
+        run: npm run test:stack -w packages/server
+      - if: failure()
+        run: docker compose logs orchestrator

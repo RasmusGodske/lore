@@ -3,7 +3,7 @@ import { parse } from "../args.js";
 import { printJson, printTable, wantsJson } from "../output.js";
 import { usage } from "../errors.js";
 
-const HELP = `usage: kb user <command>        (admin only)
+const HELP = `usage: lore user <command>        (admin only)
 
   create <name> [--admin]    create a user
   list                       all users

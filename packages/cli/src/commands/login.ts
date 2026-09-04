@@ -1,16 +1,16 @@
 import { parse } from "../args.js";
-import { KbClient } from "../client.js";
+import { LoreClient } from "../client.js";
 import { saveConfig } from "../config.js";
 import { makeContext } from "../context.js";
 import { printJson, wantsJson } from "../output.js";
 import { usage } from "../errors.js";
 
-/** kb login <url> --token <token>: verifies the token, then saves both. */
+/** lore login <url> --token <token>: verifies the token, then saves both. */
 export async function login(args: string[]) {
   const { values, positionals } = parse(args, { token: { type: "string" } });
   const url = positionals[0]?.replace(/\/$/, "");
-  if (!url || !values.token) throw usage("usage: kb login <url> --token <token>");
-  const me = await new KbClient(url, values.token).me();
+  if (!url || !values.token) throw usage("usage: lore login <url> --token <token>");
+  const me = await new LoreClient(url, values.token).me();
   const path = saveConfig({ url, token: values.token });
   process.stderr.write(`logged in as ${me.user}${me.admin ? " (admin)" : ""} with token '${me.token}'; saved to ${path}\n`);
 }

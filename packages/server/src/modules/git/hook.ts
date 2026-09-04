@@ -26,7 +26,7 @@ const git = (args: string[]): { ok: boolean; out: string } => {
   catch { return { ok: false, out: "" }; }
 };
 const isAncestor = (a: string, b: string) => git(["merge-base", "--is-ancestor", a, b]).ok;
-const say = (l: string) => process.stderr.write(`kb: ${l}\n`);
+const say = (l: string) => process.stderr.write(`lore: ${l}\n`);
 
 const updates: RefUpdate[] = fs.readFileSync(0, "utf8").split("\n").filter(Boolean).map((l) => {
   const [oldSha, newSha, ref] = l.split(" ");

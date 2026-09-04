@@ -1,4 +1,4 @@
-/** Subject: how `kb exec` turns argv into one shell command. Tier: isolated. */
+/** Subject: how `lore exec` turns argv into one shell command. Tier: isolated. */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { joinCommand, shellQuote, splitDoubleDash } from "./args.js";

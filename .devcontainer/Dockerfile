@@ -18,7 +18,7 @@ RUN [ -d ~/.oh-my-zsh ] || sh -c "$(curl -fsSL https://raw.githubusercontent.com
 
 USER root
 # node 22 (the server uses node:sqlite, which needs >= 22.13), GitHub CLI, and the shell tools
-# the sandbox image also has, so poking at data/main and kb.db feels the same as inside a session.
+# the sandbox image also has, so poking at data/main and lore.db feels the same as inside a session.
 RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - \
     && install -d -m 0755 /etc/apt/keyrings \
     && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /etc/apt/keyrings/githubcli-archive-keyring.gpg \
@@ -37,7 +37,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
 USER root
 RUN printf '%s\n' \
       'export PATH="$HOME/.local/bin:$PATH"' \
-      'export KB_URL="http://localhost:8480"' \
+      'export LORE_URL="http://localhost:8480"' \
       >> /home/vscode/.zshrc \
     && chown -R vscode:vscode /home/vscode \
     && su - vscode -c 'export PATH="$HOME/.local/bin:$PATH"; uv --version && claude --version && omp --version'

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * kb-admin: bootstrap administration with direct database access.
- * Run inside the orchestrator container; needs KB_DATA_DIR, nothing else.
+ * lore-admin: bootstrap administration with direct database access.
+ * Run inside the orchestrator container; needs LORE_DATA_DIR, nothing else.
  *
- *   kb-admin user create <name> [--admin]
- *   kb-admin user list
- *   kb-admin token create <user> <label>
+ *   lore-admin user create <name> [--admin]
+ *   lore-admin user list
+ *   lore-admin token create <user> <label>
  */
 import "reflect-metadata";
 import { Module } from "@nestjs/common";
@@ -20,7 +20,7 @@ import { TokensService } from "./modules/auth";
 class AdminModule {}
 
 function usage(): never {
-  process.stderr.write("usage: kb-admin (user create <name> [--admin] | user list | token create <user> <label>)\n");
+  process.stderr.write("usage: lore-admin (user create <name> [--admin] | user list | token create <user> <label>)\n");
   process.exit(104);
 }
 
@@ -41,11 +41,11 @@ async function main() {
       const [userName, label] = rest;
       if (!userName || !label) usage();
       const u = users.byName(userName);
-      if (!u) { process.stderr.write(`kb-admin: no user '${userName}'\n`); process.exit(104); }
+      if (!u) { process.stderr.write(`lore-admin: no user '${userName}'\n`); process.exit(104); }
       console.log(tokens.create(u.id, label).token);
     } else usage();
   } catch (e: any) {
-    process.stderr.write(`kb-admin: ${e?.response?.error?.message ?? e?.message ?? String(e)}\n`);
+    process.stderr.write(`lore-admin: ${e?.response?.error?.message ?? e?.message ?? String(e)}\n`);
     process.exit(1);
   } finally {
     await ctx.close();

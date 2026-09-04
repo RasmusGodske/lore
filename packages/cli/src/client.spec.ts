@@ -1,7 +1,7 @@
 /** Subject: the client's translation of HTTP outcomes into the CLI's exit-code vocabulary. Tier: isolated (fetch is faked). */
 import { describe, it, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { KbClient } from "./client.js";
+import { LoreClient } from "./client.js";
 import { CliError } from "./errors.js";
 
 const realFetch = globalThis.fetch;
@@ -10,7 +10,7 @@ afterEach(() => { globalThis.fetch = realFetch; });
 function fake(status: number, body: unknown, headers: Record<string, string> = { "content-type": "application/json" }) {
   globalThis.fetch = (async () => new Response(typeof body === "string" ? body : JSON.stringify(body), { status, headers })) as typeof fetch;
 }
-const client = () => new KbClient("http://kb", "kb_x");
+const client = () => new LoreClient("http://lore", "lore_x");
 
 describe("transport error mapping", () => {
   it("maps 401 to code 101 with the server's message", async () => {
@@ -24,7 +24,7 @@ describe("transport error mapping", () => {
   });
   it("maps an unreachable server to code 100 naming the URL", async () => {
     globalThis.fetch = (async () => { throw new TypeError("fetch failed"); }) as typeof fetch;
-    await assert.rejects(client().me(), (e: CliError) => e.code === 100 && /http:\/\/kb/.test(e.message));
+    await assert.rejects(client().me(), (e: CliError) => e.code === 100 && /http:\/\/lore/.test(e.message));
   });
   it("returns a command's non-zero exit as a result, never as an error", async () => {
     fake(200, { stdout: "", stderr: "cat: nope", exit_code: 1, duration_ms: 3, stdin_bytes: 0, truncated: false });

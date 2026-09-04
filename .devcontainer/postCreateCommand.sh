@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs once after the container is created. Idempotent: safe to re-run.
-# Brings the whole stack up so a contributor can `kb session create` immediately.
+# Brings the whole stack up so a contributor can `lore session create` immediately.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -20,14 +20,14 @@ for i in $(seq 1 30); do curl -sf http://localhost:8480/health >/dev/null && bre
 
 echo "== bootstrapping a dev admin and logging the CLI in"
 if [ ! -f data/.token-dev ]; then
-  docker compose exec -T orchestrator kb-admin user create dev --admin >/dev/null 2>&1 || true
-  docker compose exec -T orchestrator kb-admin token create dev devcontainer | tr -d '\r' > data/.token-dev
+  docker compose exec -T orchestrator lore-admin user create dev --admin >/dev/null 2>&1 || true
+  docker compose exec -T orchestrator lore-admin token create dev devcontainer | tr -d '\r' > data/.token-dev
 fi
-kb login http://localhost:8480 --token "$(cat data/.token-dev)"
+lore login http://localhost:8480 --token "$(cat data/.token-dev)"
 echo "== registering the MCP server with claude (local scope)"
-claude mcp add --transport http kb http://localhost:8480/mcp --header "Authorization: Bearer $(cat data/.token-dev)" >/dev/null 2>&1 || true
+claude mcp add --transport http lore http://localhost:8480/mcp --header "Authorization: Bearer $(cat data/.token-dev)" >/dev/null 2>&1 || true
 
 echo
-echo "ready: stack on http://localhost:8480 (docs at /docs), kb logged in as 'dev'."
+echo "ready: stack on http://localhost:8480 (docs at /docs), lore logged in as 'dev'."
 echo "       npm test                                # isolated tier"
 echo "       npm run test:stack -w packages/server    # stack tier"

@@ -3,7 +3,7 @@ import { parse } from "../args.js";
 import { printJson, printTable, wantsJson } from "../output.js";
 import { usage } from "../errors.js";
 
-const HELP = `usage: kb token <command>
+const HELP = `usage: lore token <command>
 
   create <label>     mint a token for yourself; the plaintext is printed once
   list               your tokens

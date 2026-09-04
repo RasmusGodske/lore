@@ -577,11 +577,11 @@ export interface operations {
             query?: never;
             header: {
                 /** @description The command, percent-encoded (encodeURIComponent) */
-                "x-kb-command": string;
+                "x-lore-command": string;
                 /** @description Working directory relative to /workspace */
-                "x-kb-cwd"?: string;
+                "x-lore-cwd"?: string;
                 /** @description Timeout in milliseconds */
-                "x-kb-timeout-ms"?: string;
+                "x-lore-timeout-ms"?: string;
             };
             path: {
                 id: string;

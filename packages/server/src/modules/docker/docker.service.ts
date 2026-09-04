@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import Docker from "dockerode";
 import { PassThrough, Readable } from "node:stream";
+import os from "node:os";
 import { ConfigService } from "../config";
 import { connectionError, timeoutError } from "../api";
 
@@ -32,7 +33,7 @@ export class DockerService {
   private readonly docker: Docker;
 
   constructor(private readonly config: ConfigService) {
-    this.docker = new Docker({ socketPath: config.env.KB_DOCKER_SOCKET });
+    this.docker = new Docker({ socketPath: config.env.LORE_DOCKER_SOCKET });
   }
 
   private wrap(e: unknown): never {
@@ -43,28 +44,54 @@ export class DockerService {
     try { await this.docker.ping(); } catch (e) { this.wrap(e); }
   }
 
-  async startSandbox(sessionId: string): Promise<string> {
+  private hostEntry?: string[];
+
+  /**
+   * The sandbox reaches the orchestrator by name for `git push`. Under gVisor the container
+   * cannot use Docker's embedded DNS (127.0.0.11 is not reachable from gVisor's network stack),
+   * so the name is pinned in the sandbox's hosts file. The address must be the orchestrator's
+   * own address on the sandbox network: it also sits on the default network, and a plain name
+   * lookup returns that one, which sandboxes cannot reach.
+   */
+  private async orchestratorHostEntry(): Promise<string[]> {
+    if (this.hostEntry) return this.hostEntry;
     const env = this.config.env;
     try {
+      const me = await this.docker.getContainer(os.hostname()).inspect();
+      const address = me.NetworkSettings.Networks[env.LORE_SANDBOX_NETWORK]?.IPAddress;
+      if (!address) throw new Error(`orchestrator is not attached to network ${env.LORE_SANDBOX_NETWORK}`);
+      this.hostEntry = [`${env.LORE_SERVER_HOST}:${address}`];
+    } catch (e) {
+      this.log.warn(`could not determine the orchestrator's address on ${env.LORE_SANDBOX_NETWORK}: ${String(e)}; relying on container DNS`);
+      this.hostEntry = [];
+    }
+    return this.hostEntry;
+  }
+
+  async startSandbox(sessionId: string): Promise<string> {
+    const env = this.config.env;
+    const extraHosts = await this.orchestratorHostEntry();
+    try {
       const container = await this.docker.createContainer({
-        Image: env.KB_SANDBOX_IMAGE,
-        name: `kb-sess-${sessionId}`,
+        Image: env.LORE_SANDBOX_IMAGE,
+        name: `lore-sess-${sessionId}`,
         Cmd: ["sleep", "infinity"],
         User: `${SANDBOX_UID}:${SANDBOX_UID}`,
         WorkingDir: "/workspace",
-        Env: [`KB_SESSION_ID=${sessionId}`, "HOME=/tmp", "GIT_TERMINAL_PROMPT=0"],
-        Labels: { "kb.session": sessionId, "kb.role": "sandbox" },
+        Env: [`LORE_SESSION_ID=${sessionId}`, "HOME=/tmp", "GIT_TERMINAL_PROMPT=0"],
+        Labels: { "lore.session": sessionId, "lore.role": "sandbox" },
         HostConfig: {
-          Runtime: env.KB_SANDBOX_RUNTIME,
-          NetworkMode: env.KB_SANDBOX_NETWORK,
+          Runtime: env.LORE_SANDBOX_RUNTIME,
+          NetworkMode: env.LORE_SANDBOX_NETWORK,
           ReadonlyRootfs: true,
           Tmpfs: { "/tmp": "rw,noexec,nosuid,size=256m" },
           Binds: [`${this.config.hostWorkspacePath(sessionId)}:/workspace`],
-          Memory: env.KB_SANDBOX_MEMORY_BYTES,
-          NanoCpus: Math.round(env.KB_SANDBOX_CPUS * 1e9),
-          PidsLimit: env.KB_SANDBOX_PIDS_LIMIT,
+          Memory: env.LORE_SANDBOX_MEMORY_BYTES,
+          NanoCpus: Math.round(env.LORE_SANDBOX_CPUS * 1e9),
+          PidsLimit: env.LORE_SANDBOX_PIDS_LIMIT,
           CapDrop: ["ALL"],
           SecurityOpt: ["no-new-privileges"],
+          ExtraHosts: extraHosts,
         },
       });
       await container.start();
@@ -85,8 +112,8 @@ export class DockerService {
   /** session id -> container id for every sandbox this orchestrator created. */
   async listSandboxes(): Promise<Map<string, string>> {
     try {
-      const list = await this.docker.listContainers({ all: true, filters: { label: ["kb.role=sandbox"] } });
-      return new Map(list.map((c) => [c.Labels["kb.session"], c.Id]));
+      const list = await this.docker.listContainers({ all: true, filters: { label: ["lore.role=sandbox"] } });
+      return new Map(list.map((c) => [c.Labels["lore.session"], c.Id]));
     } catch (e) { this.wrap(e); }
   }
 
@@ -95,8 +122,8 @@ export class DockerService {
    * coreutils `timeout` so the process group really dies; a backstop timer covers a hung stream.
    */
   async exec(r: ExecRequest): Promise<ExecResult> {
-    const cap = this.config.env.KB_EXEC_OUTPUT_CAP_BYTES;
-    const headCap = this.config.env.KB_AUDIT_HEAD_BYTES;
+    const cap = this.config.env.LORE_EXEC_OUTPUT_CAP_BYTES;
+    const headCap = this.config.env.LORE_AUDIT_HEAD_BYTES;
     const seconds = Math.max(1, Math.ceil(r.timeoutMs / 1000));
     const started = Date.now();
     const container = this.docker.getContainer(r.containerId);

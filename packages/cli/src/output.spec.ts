@@ -1,4 +1,4 @@
-/** Subject: the human rendering of `kb session log`. Tier: isolated. */
+/** Subject: the human rendering of `lore session log`. Tier: isolated. */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { formatAuditEvent } from "./output.js";

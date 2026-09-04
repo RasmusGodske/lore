@@ -53,19 +53,19 @@ export class SessionsController {
   @UseGuards(SessionAccessGuard)
   @ApiOperation({ summary: "Run a shell command with the request body streamed to its stdin. Command and options travel in headers" })
   @ApiConsumes("application/octet-stream")
-  @ApiHeader({ name: "x-kb-command", required: true, description: "The command, percent-encoded (encodeURIComponent)" })
-  @ApiHeader({ name: "x-kb-cwd", required: false, description: "Working directory relative to /workspace" })
-  @ApiHeader({ name: "x-kb-timeout-ms", required: false, description: "Timeout in milliseconds" })
+  @ApiHeader({ name: "x-lore-command", required: true, description: "The command, percent-encoded (encodeURIComponent)" })
+  @ApiHeader({ name: "x-lore-cwd", required: false, description: "Working directory relative to /workspace" })
+  @ApiHeader({ name: "x-lore-timeout-ms", required: false, description: "Timeout in milliseconds" })
   @ZodResponse({ status: 200, type: ExecResultDto })
   execStdin(
     @CurrentPrincipal() p: Principal, @Param("id") id: string, @Req() req: Request,
-    @Headers("x-kb-command") encoded?: string, @Headers("x-kb-cwd") cwd?: string, @Headers("x-kb-timeout-ms") timeout?: string,
+    @Headers("x-lore-command") encoded?: string, @Headers("x-lore-cwd") cwd?: string, @Headers("x-lore-timeout-ms") timeout?: string,
   ) {
-    if (!encoded) throw badRequest("x-kb-command header is required");
+    if (!encoded) throw badRequest("x-lore-command header is required");
     let command: string;
-    try { command = decodeURIComponent(encoded); } catch { throw badRequest("x-kb-command must be percent-encoded"); }
+    try { command = decodeURIComponent(encoded); } catch { throw badRequest("x-lore-command must be percent-encoded"); }
     const timeoutMs = timeout ? Number(timeout) : undefined;
-    if (timeoutMs !== undefined && !Number.isFinite(timeoutMs)) throw badRequest("x-kb-timeout-ms must be a number");
+    if (timeoutMs !== undefined && !Number.isFinite(timeoutMs)) throw badRequest("x-lore-timeout-ms must be a number");
     return this.sessions.exec(p, id, command, { cwd: cwd || undefined, timeoutMs, stdin: req });
   }
 

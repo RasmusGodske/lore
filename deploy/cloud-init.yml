@@ -1,0 +1,88 @@
+#cloud-config
+# First-boot setup for a host running the knowledge-base orchestrator.
+# Provider-neutral: works anywhere that accepts cloud-init on Ubuntu 24.04.
+# Installs Docker, gVisor (runsc), Caddy, sqlite3, a firewall, and a deploy user.
+# Placeholders __DOMAIN__ and __SSH_KEY__ are substituted by deploy/create-server.sh.
+
+hostname: lore
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - git
+  - ufw
+  - sqlite3
+  - rsync
+
+users:
+  - name: deploy
+    groups: [sudo, docker]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - __SSH_KEY__
+
+write_files:
+  - path: /etc/caddy/Caddyfile
+    content: |
+      # TLS terminates here; the orchestrator listens on 127.0.0.1:8480 only.
+      __DOMAIN__ {
+        encode gzip
+        reverse_proxy 127.0.0.1:8480
+      }
+  - path: /etc/lore/compose.env
+    permissions: "0644"
+    content: |
+      # Copied to <repo>/.env by the guide. Production values for docker compose.
+      LORE_PUBLIC_BIND=127.0.0.1
+      LORE_PUBLIC_PORT=8480
+      LORE_SANDBOX_RUNTIME=runsc
+      # Release to run; see https://github.com/RasmusGodske/lore/releases
+      LORE_VERSION=latest
+  - path: /etc/lore/backup.env
+    permissions: "0600"
+    content: |
+      # Filled in by hand (see deploy/README.md, "Backups").
+      # LORE_BACKUP_TARGET=u123456@u123456.your-storagebox.de:lore-backups
+      # LORE_MIRROR_REMOTE=git@github.com:your-org/knowledge.git
+      LORE_BACKUP_KEEP=14
+
+runcmd:
+  # Docker from Docker's repository (the Ubuntu package lags).
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable" > /etc/apt/sources.list.d/docker.list
+  # gVisor from its release repository.
+  - curl -fsSL https://gvisor.dev/archive.key | gpg --dearmor -o /usr/share/keyrings/gvisor-archive-keyring.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/gvisor-archive-keyring.gpg] https://storage.googleapis.com/gvisor/releases release main" > /etc/apt/sources.list.d/gvisor.list
+  # Caddy from its repository.
+  - curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  - curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt > /etc/apt/sources.list.d/caddy-stable.list
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin runsc caddy
+  # Register runsc as a Docker runtime and verify it actually runs a container.
+  - runsc install
+  - systemctl restart docker
+  - systemctl enable docker caddy
+  - docker run --rm --runtime=runsc hello-world > /var/log/lore-runsc-check.log 2>&1 || echo "runsc check FAILED" >> /var/log/lore-runsc-check.log
+  # Firewall: SSH, HTTP (for the certificate challenge), HTTPS. Nothing else, ever.
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  # Sandboxes sit on the internal bridge "lore-net". An internal Docker network cannot route out,
+  # but the host's own listeners are still reachable through the bridge; refuse all of that.
+  # ufw stops at the first matching rule, so this must come before the allows.
+  - ufw deny in on lore-net
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable
+  # The caddy package is expected to create its service user; observed once that it did not.
+  - getent group caddy > /dev/null || groupadd --system caddy
+  - id caddy > /dev/null 2>&1 || useradd --system --gid caddy --create-home --home-dir /var/lib/caddy --shell /usr/sbin/nologin caddy
+  - chown -R caddy:caddy /var/lib/caddy /etc/caddy
+  - systemctl reset-failed caddy || true
+  - systemctl restart caddy
+  - mkdir -p /srv/lore /var/backups/lore && chown deploy:deploy /srv/lore /var/backups/lore
+  - touch /var/log/lore-cloud-init-done

@@ -33,16 +33,16 @@ into the session record and the audit log.
 The orchestrator:
 
 1. **Generates a session ID.** Short, URL-safe, unambiguous in a branch name. e.g. `k7m2xq`.
-2. **Prepares the workspace** at `/srv/kb/sessions/<id>/` with a local `git clone` of the
+2. **Prepares the workspace** at `/srv/lore/sessions/<id>/` with a local `git clone` of the
    bare repo. Simple, fully self-contained, costs a copy — cheap enough for a markdown repo
    that `git worktree add` was not worth its shared state.
 3. **Creates the session branch**: `session/<id>`, branched from current `main`.
 4. **Mints a random per-session git token** and rewrites `origin` to
-   `http://kb-orchestrator:8080/git/<git-token>/knowledge.git`. Only a hash of the token
+   `http://lore-server:8080/git/<git-token>/knowledge.git`. Only a hash of the token
    is stored (see `03-git-model.md`).
 5. **Starts the sandbox container** with the workspace bind-mounted at `/workspace` and
-   `KB_SESSION_ID` set.
-6. **Inserts the session row** into `/srv/kb/kb.db`, including the client IP the request
+   `LORE_SESSION_ID` set.
+6. **Inserts the session row** into `/srv/lore/lore.db`, including the client IP the request
    came from, and records a `create` audit event.
 7. **Returns the session ID.**
 
@@ -65,8 +65,8 @@ command that hits its timeout is reported as a transport error (code 103 / HTTP 
 
 **Bulk data goes in through stdin.** A file or an archive enters the workspace the way it
 would on any Unix box, piped into a command:
-`kb exec -- 'cat > topics/nightly-import/index.md' < index.md`, or
-`tar -C docs -c . | kb exec -- 'tar -x -C talks'`. The CLI streams its own stdin to the
+`lore exec -- 'cat > topics/nightly-import/index.md' < index.md`, or
+`tar -C docs -c . | lore exec -- 'tar -x -C talks'`. The CLI streams its own stdin to the
 command whenever that stdin is not a terminal; the HTTP form is
 `POST /sessions/{id}/exec/stdin` (see `04-interfaces.md`). This replaced a side door an
 agent found during testing — `docker cp` into the sandbox from the host — which bypasses
@@ -124,8 +124,8 @@ separately.
 
 ## Session record
 
-One row in the `sessions` table of `/srv/kb/kb.db`. Rendered as JSON, which is what
-`kb session list --json` and `GET /sessions/{id}` return:
+One row in the `sessions` table of `/srv/lore/lore.db`. Rendered as JSON, which is what
+`lore session list --json` and `GET /sessions/{id}` return:
 
 ```json
 {
@@ -133,7 +133,7 @@ One row in the `sessions` table of `/srv/kb/kb.db`. Rendered as JSON, which is w
   "state": "active",
   "branch": "session/k7m2xq",
   "container_id": "3f9a...",
-  "workspace": "/srv/kb/sessions/k7m2xq",
+  "workspace": "/srv/lore/sessions/k7m2xq",
   "user": "alice",
   "token_label": "claude-code-laptop",
   "created_ip": "10.0.0.5",
@@ -158,12 +158,12 @@ container state and mark orphans failed.
 
 ## Audit log
 
-Append-only `audit_events` table in `/srv/kb/kb.db`, one row per event, keyed by session.
+Append-only `audit_events` table in `/srv/lore/lore.db`, one row per event, keyed by session.
 Each row stores the operation, the acting user and token, the client IP (`X-Forwarded-For`
 behind the reverse proxy on the VM), exit code, duration, full byte counts, and the first
 64 KB of stdin, stdout and stderr, with a `truncated` flag when any stream exceeded that.
 Binary stdin (a tar stream) is noted as `<binary, N bytes>` rather than stored.
-`kb session log --json` and `GET /sessions/{id}/log` render it as one JSON object per line:
+`lore session log --json` and `GET /sessions/{id}/log` render it as one JSON object per line:
 
 ```json
 {"ts":"2026-09-03T09:15:01Z","session":"k7m2xq","op":"exec","user_id":"3f2c","token_id":"9b7e","ip":"10.0.0.5","cmd":"rg -l 'nightly import' topics/","exit":0,"ms":34,"stdout_bytes":128}

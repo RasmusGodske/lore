@@ -1,5 +1,5 @@
 {
-  "name": "kb orchestrator",
+  "name": "lore orchestrator",
   "build": {
     "dockerfile": "Dockerfile"
   },
@@ -12,12 +12,12 @@
   ],
   "portsAttributes": {
     "8480": {
-      "label": "kb orchestrator",
+      "label": "lore orchestrator",
       "onAutoForward": "silent"
     }
   },
   "containerEnv": {
-    "KB_URL": "http://localhost:8480"
+    "LORE_URL": "http://localhost:8480"
   },
   "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
   "customizations": {

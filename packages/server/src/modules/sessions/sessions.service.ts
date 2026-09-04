@@ -50,7 +50,7 @@ export class SessionsService {
   async create(p: Principal, meta: { purpose?: string } = {}): Promise<SessionDto> {
     await this.docker.ping();
     const id = shortId(6);
-    const gitToken = newSecret("kbg");
+    const gitToken = newSecret("loreg");
     this.repo.insert({
       id, branch: `session/${id}`, workspace: this.config.workspacePath(id), git_token_hash: hashSecret(gitToken),
       user_id: p.user.id, token_id: p.token.id, created_ip: p.ip, purpose: meta.purpose ?? null,
@@ -76,7 +76,7 @@ export class SessionsService {
     if (typeof command !== "string" || command.length === 0) throw badRequest("command must be a non-empty string");
     const cwd = this.resolveCwd(opts.cwd);
     const env = this.config.env;
-    const timeoutMs = Math.min(Math.max(opts.timeoutMs ?? env.KB_EXEC_DEFAULT_TIMEOUT_MS, 1000), env.KB_EXEC_MAX_TIMEOUT_MS);
+    const timeoutMs = Math.min(Math.max(opts.timeoutMs ?? env.LORE_EXEC_DEFAULT_TIMEOUT_MS, 1000), env.LORE_EXEC_MAX_TIMEOUT_MS);
     const base = { session_id: id, op: "exec" as const, cmd: command, cwd: opts.cwd, ...this.actor(p) };
     try {
       const r = await this.docker.exec({ containerId: s.container_id!, command, cwd, timeoutMs, stdin: opts.stdin });

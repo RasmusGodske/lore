@@ -1,5 +1,5 @@
 {
-  "name": "@kb/server",
+  "name": "@lore/server",
   "version": "0.1.0",
   "private": true,
   "type": "commonjs",
@@ -9,7 +9,7 @@
     "dev": "nest start --watch",
     "openapi": "node dist/openapi.js > ../../openapi.json",
     "test": "node --test --disable-warning=ExperimentalWarning --import tsx --test-reporter=spec 'src/**/*.spec.ts' 'test/**/*.spec.ts'",
-    "test:stack": "KB_TEST_URL=${KB_TEST_URL:-http://localhost:8480} KB_TEST_ADMIN_TOKEN=${KB_TEST_ADMIN_TOKEN:-$(cat ../../data/.token-dev)} KB_TEST_DATA_DIR=${KB_TEST_DATA_DIR:-$(cd ../.. && pwd)/data} npm test"
+    "test:stack": "LORE_TEST_URL=${LORE_TEST_URL:-http://localhost:8480} LORE_TEST_ADMIN_TOKEN=${LORE_TEST_ADMIN_TOKEN:-$(cat ../../data/.token-dev)} LORE_TEST_DATA_DIR=${LORE_TEST_DATA_DIR:-$(cd ../.. && pwd)/data} npm test"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

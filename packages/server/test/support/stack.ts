@@ -1,7 +1,7 @@
 /**
  * Scaffolding for the "stack" tier: tests that drive a running orchestrator over HTTP,
  * with real Docker sandboxes and a real repository. A test file declares the tier by calling
- * `stackTier()`; absent KB_TEST_URL and KB_TEST_ADMIN_TOKEN it returns null and the file skips,
+ * `stackTier()`; absent LORE_TEST_URL and LORE_TEST_ADMIN_TOKEN it returns null and the file skips,
  * so `npm test` stays cheap. `npm run test:stack` runs them against the local compose stack.
  */
 import { randomBytes } from "node:crypto";
@@ -9,11 +9,11 @@ import { randomBytes } from "node:crypto";
 export interface Stack { url: string; adminToken: string }
 
 export function stackTier(): Stack | null {
-  const url = process.env.KB_TEST_URL;
-  const adminToken = process.env.KB_TEST_ADMIN_TOKEN;
+  const url = process.env.LORE_TEST_URL;
+  const adminToken = process.env.LORE_TEST_ADMIN_TOKEN;
   return url && adminToken ? { url: url.replace(/\/$/, ""), adminToken } : null;
 }
-export const skipReason = "stack tier: set KB_TEST_URL and KB_TEST_ADMIN_TOKEN (npm run test:stack)";
+export const skipReason = "stack tier: set LORE_TEST_URL and LORE_TEST_ADMIN_TOKEN (npm run test:stack)";
 
 export interface Reply { status: number; json: any; text: string }
 
@@ -41,7 +41,7 @@ export class Api {
     return this.call("POST", `/sessions/${id}/exec`, { command, ...opts });
   }
   execStdin(id: string, command: string, stdin: Buffer) {
-    return this.call("POST", `/sessions/${id}/exec/stdin`, undefined, { "x-kb-command": encodeURIComponent(command) }, stdin);
+    return this.call("POST", `/sessions/${id}/exec/stdin`, undefined, { "x-lore-command": encodeURIComponent(command) }, stdin);
   }
   async createSession(purpose: string): Promise<string> {
     const r = await this.call("POST", "/sessions", { purpose });

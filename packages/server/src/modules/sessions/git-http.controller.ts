@@ -38,7 +38,7 @@ export class GitHttpController {
   private async serve(token: string, subpath: string, req: Request, res: Response): Promise<void> {
     const session = this.sessions.byGitToken(token);
     if (!session || session.state !== "active") {
-      res.status(403).type("text/plain").send("kb: unknown or inactive session token in remote URL\n");
+      res.status(403).type("text/plain").send("lore: unknown or inactive session token in remote URL\n");
       return;
     }
     const url = new URL(req.originalUrl, "http://x");
@@ -107,7 +107,7 @@ export class GitHttpController {
         this.log.log(`push ${session.id} ${accepted ? "accepted" : "rejected"} main=${mainAfter?.slice(0, 7)}`);
       }
       if (code !== 0) this.log.warn(`http-backend exited ${code}: ${Buffer.concat(stderr).toString().trim()}`);
-      if (!headersDone) res.status(500).type("text/plain").send(`kb: git http-backend failed (${code}): ${Buffer.concat(stderr)}`);
+      if (!headersDone) res.status(500).type("text/plain").send(`lore: git http-backend failed (${code}): ${Buffer.concat(stderr)}`);
       else res.end();
       finished();
     });

@@ -15,13 +15,13 @@ If the push is rejected because main moved, run:
   git fetch origin && git merge origin/main
 resolve any conflict markers in the files, commit, and push again. Never rebase or force-push.
 
-Returns stdout, stderr and the exit code exactly as the command produced them. A non-zero exit code means the command failed, not the tool. Output is capped at 1 MB. For bulk file transfer use the kb CLI, which can stream stdin into a command (e.g. tar | kb exec -- 'tar -x').`;
+Returns stdout, stderr and the exit code exactly as the command produced them. A non-zero exit code means the command failed, not the tool. Output is capped at 1 MB. For bulk file transfer use the lore CLI, which can stream stdin into a command (e.g. tar | lore exec -- 'tar -x').`;
 
-const CREATE_DESCRIPTION = `Create a knowledge-base session: a fresh sandbox with its own checkout and branch. Call this once per task, then pass the returned session_id to kb_shell. Close it with kb_session_close when the task is done. Idle sessions are reaped after 24 hours and their unpushed work is discarded.`;
+const CREATE_DESCRIPTION = `Create a knowledge-base session: a fresh sandbox with its own checkout and branch. Call this once per task, then pass the returned session_id to lore_shell. Close it with lore_session_close when the task is done. Idle sessions are reaped after 24 hours and their unpushed work is discarded.`;
 
 const text = (s: string) => ({ content: [{ type: "text" as const, text: s }] });
 const errorResult = (e: unknown) => ({
-  ...text(e instanceof TransportError ? `kb: ${e.message} (transport error ${e.code})` : `kb: ${e instanceof Error ? e.message : String(e)}`),
+  ...text(e instanceof TransportError ? `lore: ${e.message} (transport error ${e.code})` : `lore: ${e instanceof Error ? e.message : String(e)}`),
   isError: true,
 });
 
@@ -31,10 +31,10 @@ export class McpServerFactory {
   constructor(private readonly sessions: SessionsService) {}
 
   build(p: Principal): McpServer {
-    const server = new McpServer({ name: "kb", version: "0.1.0" });
+    const server = new McpServer({ name: "lore", version: "0.1.0" });
     const sessions = this.sessions;
 
-    server.registerTool("kb_session_create", {
+    server.registerTool("lore_session_create", {
       title: "Create knowledge-base session",
       description: CREATE_DESCRIPTION,
       inputSchema: {
@@ -47,7 +47,7 @@ export class McpServerFactory {
       } catch (e) { return errorResult(e); }
     });
 
-    server.registerTool("kb_session_list", {
+    server.registerTool("lore_session_list", {
       title: "List knowledge-base sessions",
       description: "List sessions. By default only active ones, for every user.",
       inputSchema: { all: z.boolean().optional().describe("Include closed, expired and failed sessions.") },
@@ -56,7 +56,7 @@ export class McpServerFactory {
       return { ...text(list.length ? list.map((s) => `${s.id}  ${s.state.padEnd(8)} ${s.user}/${s.token_label}  ${s.purpose ?? ""}`).join("\n") : "no sessions"), structuredContent: { sessions: list } };
     });
 
-    server.registerTool("kb_session_close", {
+    server.registerTool("lore_session_close", {
       title: "Close knowledge-base session",
       description: "Tear down a session's sandbox and workspace. Push first: anything not pushed is discarded.",
       inputSchema: { session_id: z.string().describe("The session to close.") },
@@ -65,11 +65,11 @@ export class McpServerFactory {
       catch (e) { return errorResult(e); }
     });
 
-    server.registerTool("kb_shell", {
+    server.registerTool("lore_shell", {
       title: "Run a command in the knowledge base",
       description: SHELL_DESCRIPTION,
       inputSchema: {
-        session_id: z.string().describe("Session from kb_session_create."),
+        session_id: z.string().describe("Session from lore_session_create."),
         command: z.string().min(1).describe("Shell command, run with sh -c in /workspace."),
         cwd: z.string().optional().describe("Working directory relative to /workspace."),
         timeout_ms: z.number().int().min(1000).max(600_000).optional().describe("Default 60000."),

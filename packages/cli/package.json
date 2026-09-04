@@ -1,20 +1,44 @@
 {
-  "name": "@kb/cli",
+  "name": "@rasmusgodske/lore",
   "version": "0.1.0",
-  "description": "Command-line interface to the kb knowledge-base orchestrator",
+  "description": "Command-line client for lore, a git-backed knowledge base for AI agents and people.",
   "type": "module",
-  "bin": { "kb": "./dist/index.js" },
-  "files": ["dist"],
+  "bin": {
+    "lore": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "generate": "openapi-typescript ../../openapi.json -o src/generated/api.d.ts",
     "test": "node --test --import tsx/esm --test-reporter=spec 'src/**/*.spec.ts'"
   },
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "devDependencies": {
     "@types/node": "^22.19.0",
     "openapi-typescript": "^7.13.0",
     "tsx": "^4.23.13",
     "typescript": "^5.9.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RasmusGodske/lore.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/RasmusGodske/lore#readme",
+  "keywords": [
+    "knowledge-base",
+    "agents",
+    "mcp",
+    "cli",
+    "okf"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

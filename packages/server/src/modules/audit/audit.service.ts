@@ -37,7 +37,7 @@ export class AuditService {
   constructor(private readonly db: DatabaseService, private readonly config: ConfigService) {}
 
   record(e: AuditInput): void {
-    const cap = this.config.env.KB_AUDIT_HEAD_BYTES;
+    const cap = this.config.env.LORE_AUDIT_HEAD_BYTES;
     const head = (b?: Buffer) => {
       if (b === undefined) return null;
       const slice = b.subarray(0, cap);
@@ -61,7 +61,7 @@ export class AuditService {
     return this.db.conn.prepare("SELECT * FROM audit_events WHERE session_id = ? ORDER BY id").all(sessionId) as unknown as AuditRow[];
   }
 
-  /** One JSON object per event, nulls omitted. This is the `kb session log` wire format. */
+  /** One JSON object per event, nulls omitted. This is the `lore session log` wire format. */
   static toEvent(r: AuditRow): Record<string, unknown> {
     const o: Record<string, unknown> = { ts: r.ts, session: r.session_id, op: r.op };
     if (r.user_id) o.user_id = r.user_id;

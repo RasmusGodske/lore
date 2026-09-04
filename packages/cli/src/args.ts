@@ -12,7 +12,7 @@ export function parse<O extends Options>(args: string[], options: O, allowPositi
   }
 }
 
-/** Splits `kb exec [opts] [id] -- cmd...` into the part before and after `--`. */
+/** Splits `lore exec [opts] [id] -- cmd...` into the part before and after `--`. */
 export function splitDoubleDash(args: string[]): { own: string[]; rest: string[] } {
   const i = args.indexOf("--");
   return i === -1 ? { own: args, rest: [] } : { own: args.slice(0, i), rest: args.slice(i + 1) };

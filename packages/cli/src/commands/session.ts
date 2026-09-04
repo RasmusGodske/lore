@@ -4,7 +4,7 @@ import { formatAuditEvent, printJson, printTable, wantsJson } from "../output.js
 import { usage } from "../errors.js";
 import type { Session } from "../client.js";
 
-const HELP = `usage: kb session <command>
+const HELP = `usage: lore session <command>
 
   create [--purpose TEXT]                     create a session, print its id
   list [--all] [--user ID]                    list sessions (active by default)
@@ -12,7 +12,7 @@ const HELP = `usage: kb session <command>
   close [ID]                                  close a session; unpushed work is discarded
   log [ID]                                    the session's audit log
 
-ID defaults to $KB_SESSION. Add --json for machine-readable output (default when piped).`;
+ID defaults to $LORE_SESSION. Add --json for machine-readable output (default when piped).`;
 
 const row = (s: Session) => [s.id, s.state, `${s.user}/${s.token_label}`, s.last_activity_at, s.purpose ?? ""];
 

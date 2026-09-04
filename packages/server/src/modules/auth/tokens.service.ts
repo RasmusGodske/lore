@@ -13,7 +13,7 @@ export class TokensService {
 
   /** Mints a token. The plaintext is returned exactly once and never stored. */
   create(userId: string, label: string): { token: string; row: TokenRow } {
-    const token = newSecret("kb");
+    const token = newSecret("lore");
     const row: TokenRow = { id: shortId(8), user_id: userId, label, token_hash: hashSecret(token), created_at: now(), last_used_at: null, revoked_at: null };
     this.db.conn.prepare("INSERT INTO tokens (id, user_id, label, token_hash, created_at) VALUES (?, ?, ?, ?, ?)")
       .run(row.id, row.user_id, row.label, row.token_hash, row.created_at);

@@ -462,7 +462,7 @@
             }
           },
           {
-            "name": "x-kb-command",
+            "name": "x-lore-command",
             "required": true,
             "in": "header",
             "description": "The command, percent-encoded (encodeURIComponent)",
@@ -471,7 +471,7 @@
             }
           },
           {
-            "name": "x-kb-cwd",
+            "name": "x-lore-cwd",
             "required": false,
             "in": "header",
             "description": "Working directory relative to /workspace",
@@ -480,7 +480,7 @@
             }
           },
           {
-            "name": "x-kb-timeout-ms",
+            "name": "x-lore-timeout-ms",
             "required": false,
             "in": "header",
             "description": "Timeout in milliseconds",
@@ -561,7 +561,7 @@
     }
   },
   "info": {
-    "title": "kb orchestrator",
+    "title": "lore orchestrator",
     "description": "Sessions, exec and administration for the shared agent knowledge base. Every route except /health needs a bearer token.",
     "version": "0.1.0",
     "contact": {}

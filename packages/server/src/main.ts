@@ -17,7 +17,7 @@ async function bootstrap() {
   SwaggerModule.setup("docs", app, doc, { jsonDocumentUrl: "/docs/openapi.json" });
 
   const config = app.get(ConfigService);
-  await app.listen(config.env.KB_PORT, "0.0.0.0");
-  new Logger("bootstrap").log(`kb-orchestrator listening on ${config.env.KB_PORT} (runtime ${config.env.KB_SANDBOX_RUNTIME}, data ${config.dataDir})`);
+  await app.listen(config.env.LORE_PORT, "0.0.0.0");
+  new Logger("bootstrap").log(`lore-server listening on ${config.env.LORE_PORT} (runtime ${config.env.LORE_SANDBOX_RUNTIME}, data ${config.dataDir})`);
 }
 bootstrap().catch((e) => { console.error(e); process.exit(1); });

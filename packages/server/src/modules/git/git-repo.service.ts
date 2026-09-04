@@ -29,7 +29,7 @@ export class GitRepoService implements OnModuleInit {
     const hooksDir = path.join(repo, "hooks");
     fs.mkdirSync(hooksDir, { recursive: true });
     for (const name of ["pre-receive", "post-receive"]) {
-      const shim = `#!/bin/sh\n# Installed by kb-orchestrator on boot. Edit packages/server/src/git/hook.ts instead.\nexec node ${this.config.env.KB_HOOK_SCRIPT} ${name}\n`;
+      const shim = `#!/bin/sh\n# Installed by lore-server on boot. Edit packages/server/src/git/hook.ts instead.\nexec node ${this.config.env.LORE_HOOK_SCRIPT} ${name}\n`;
       fs.writeFileSync(path.join(hooksDir, name), shim, { mode: 0o755 });
       fs.chmodSync(path.join(hooksDir, name), 0o755);
     }
@@ -48,8 +48,10 @@ export class GitRepoService implements OnModuleInit {
     if (!fs.existsSync(path.join(dir, ".git"))) {
       fs.rmSync(dir, { recursive: true, force: true });
       await gitOrThrow(["clone", "--quiet", "--branch", "main", this.config.repoPath, dir]);
-      fs.writeFileSync(path.join(dir, ".git", "kb-read-only"), "This checkout mirrors main and is overwritten on every landed push. Write through a session.\n");
+      fs.writeFileSync(path.join(dir, ".git", "lore-read-only"), "This checkout mirrors main and is overwritten on every landed push. Write through a session.\n");
     } else {
+      // The data directory can move (it did when the tool was renamed); keep origin pointing at the repo.
+      await gitOrThrow(["remote", "set-url", "origin", this.config.repoPath], { cwd: dir });
       await gitOrThrow(["fetch", "--quiet", "origin", "main"], { cwd: dir });
       await gitOrThrow(["reset", "--quiet", "--hard", "origin/main"], { cwd: dir });
     }
@@ -58,13 +60,13 @@ export class GitRepoService implements OnModuleInit {
   }
 
   private async seed(): Promise<void> {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "kb-seed-"));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lore-seed-"));
     try {
       await gitOrThrow(["clone", "--quiet", this.config.repoPath, tmp]);
-      const seedDir = this.config.env.KB_SEED_DIR;
+      const seedDir = this.config.env.LORE_SEED_DIR;
       if (fs.existsSync(seedDir)) fs.cpSync(seedDir, tmp, { recursive: true });
       else fs.writeFileSync(path.join(tmp, "index.md"), '---\ntitle: Knowledge base\nokf_version: "0.2"\n---\n');
-      const env = { GIT_AUTHOR_NAME: "kb", GIT_AUTHOR_EMAIL: "kb@localhost", GIT_COMMITTER_NAME: "kb", GIT_COMMITTER_EMAIL: "kb@localhost" };
+      const env = { GIT_AUTHOR_NAME: "lore", GIT_AUTHOR_EMAIL: "lore@localhost", GIT_COMMITTER_NAME: "lore", GIT_COMMITTER_EMAIL: "lore@localhost" };
       await gitOrThrow(["add", "-A"], { cwd: tmp });
       await gitOrThrow(["commit", "--quiet", "-m", "Initial knowledge base"], { cwd: tmp, env });
       await gitOrThrow(["push", "--quiet", "origin", "HEAD:main"], { cwd: tmp }); // hooks not installed yet
@@ -103,7 +105,7 @@ export class GitRepoService implements OnModuleInit {
     await gitOrThrow(["checkout", "--quiet", "-b", `session/${id}`], { cwd: ws });
     await gitOrThrow(["remote", "set-url", "origin", this.config.gitRemoteUrl(gitToken)], { cwd: ws });
     await gitOrThrow(["config", "user.name", `${userName} (session ${id})`], { cwd: ws });
-    await gitOrThrow(["config", "user.email", `${userName}@kb`], { cwd: ws });
+    await gitOrThrow(["config", "user.email", `${userName}@lore`], { cwd: ws });
     await gitOrThrow(["config", "push.default", "current"], { cwd: ws });
     const chown = await run("chown", ["-R", `${SANDBOX_UID}:${SANDBOX_UID}`, ws]);
     if (chown.code !== 0) this.log.warn(`chown of ${ws} failed: ${chown.stderr.trim()}`);

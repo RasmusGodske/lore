@@ -19,7 +19,7 @@ describe("auth", { skip: stack ? false : skipReason }, () => {
     const none = await fetch(`${stack!.url}/me`);
     assert.equal(none.status, 401);
     assert.equal((await none.json()).error.code, 101);
-    const bad = await new Api(stack!.url, "kb_nope").call("GET", "/me");
+    const bad = await new Api(stack!.url, "lore_nope").call("GET", "/me");
     assert.equal(bad.status, 401);
   });
 
@@ -33,7 +33,7 @@ describe("auth", { skip: stack ? false : skipReason }, () => {
   it("lets a user mint and revoke their own tokens, and a revoked token stops working at once", async () => {
     const minted = await user.call("POST", "/tokens", { label: "agent-x" });
     assert.equal(minted.status, 201);
-    assert.match(minted.json.token, /^kb_[0-9a-f]{48}$/);
+    assert.match(minted.json.token, /^lore_[0-9a-f]{48}$/);
     const asAgent = new Api(stack!.url, minted.json.token);
     assert.equal((await asAgent.call("GET", "/me")).json.token, "agent-x");
     const revoked = await user.call("DELETE", `/tokens/${minted.json.id}`);

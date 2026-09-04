@@ -11,13 +11,14 @@ decide which one is wrong; do not quietly work around it.
 ```
 spec/                 design: overview, architecture, session lifecycle, git model, interfaces, knowledge format
 packages/server/      NestJS orchestrator. src/modules/<name>/README.md says what each module hides
-packages/cli/         `kb`, the command-line client for people and agents; no runtime dependencies
+packages/cli/         `lore`, the command-line client for people and agents; no runtime dependencies
 sandbox/Dockerfile    the agent's environment inside a session
 seed/                 initial contents of the knowledge repository (its own AGENTS.md is for agents *writing knowledge*)
 openapi.json          the HTTP contract, generated from the server; the CLI's types are generated from it
-docker-compose.yml    local stack; the VM uses the same shape with KB_SANDBOX_RUNTIME=runsc
+docker-compose.yml    local stack; the VM uses the same shape with LORE_SANDBOX_RUNTIME=runsc
+deploy/               VM deployment: cloud-init, create-server.sh (Hetzner API), backup/restore, deploy/README.md
 .devcontainer/        the contributor box: docker-in-docker, stack started and CLI logged in on create (admin user `dev`)
-data/                 runtime state (gitignored): knowledge.git (bare), main/ (read-only checkout), kb.db, sessions/
+data/                 runtime state (gitignored): knowledge.git (bare), main/ (read-only checkout), lore.db, sessions/
 ```
 
 Two different AGENTS.md files exist on purpose. This one is for working on the **code**.
@@ -26,11 +27,11 @@ Two different AGENTS.md files exist on purpose. This one is for working on the *
 ## Run, test, regenerate
 
 ```bash
-docker compose up -d --build                     # stack on localhost:8480 (KB_PUBLIC_PORT to change); /docs has the API
-docker compose exec orchestrator kb-admin user create <name> --admin
-docker compose exec orchestrator kb-admin token create <name> <label>
+docker compose up -d --build                     # stack on localhost:8480 (LORE_PUBLIC_PORT to change); /docs has the API
+docker compose exec orchestrator lore-admin user create <name> --admin
+docker compose exec orchestrator lore-admin token create <name> <label>
 npm install && npm run build && npm install -g ./packages/cli
-kb login http://localhost:8480 --token <token>
+lore login http://localhost:8480 --token <token>
 
 npm test                                         # isolated tier, no Docker: unit + conventions
 npm run test:stack -w packages/server            # stack tier against the running compose stack
@@ -38,7 +39,7 @@ npm run openapi                                  # after changing any route or D
 ```
 
 The stack tier reads the admin token from `data/.token-dev` (written by the devcontainer's
-post-create script) unless `KB_TEST_ADMIN_TOKEN` is
+post-create script) unless `LORE_TEST_ADMIN_TOKEN` is
 set. If you change a route or a DTO and do not run `npm run openapi`, the CLI compiles against
 a stale contract; the build does not catch that for you.
 
@@ -74,15 +75,23 @@ with the NestJS binding written from this repo. The parts a test will fail you o
   inside the class, not as a constructor argument.
 - **Decorated classes must be imported as values**, never `import type`.
 - **Port 8080 was taken on the author's laptop.** The stack publishes on 8480; 8080 stays the
-  internal port sandboxes use to reach `kb-orchestrator` for `git push`.
-- **`KB_HOST_DATA_DIR` must be the host path** of `data/`, because sandbox bind mounts are
+  internal port sandboxes use to reach `lore-server` for `git push`.
+- **`LORE_HOST_DATA_DIR` must be the host path** of `data/`, because sandbox bind mounts are
   created by the host daemon, not by the orchestrator container. Compose sets it from `$PWD`.
   Inside the devcontainer the daemon is docker-in-docker and sees the workspace at the same
   path, so the default just works there.
 - **The sandbox network is internal** (no internet). An agent running on the same machine as
   Docker can bypass the session with `docker cp`; on the VM it cannot. The sanctioned bulk
-  path is stdin: `tar -c . | kb exec -- 'tar -x'`.
-- **`kb` reads stdin whenever it is not a terminal.** In scripts, add `< /dev/null` to an exec
+  path is stdin: `tar -c . | lore exec -- 'tar -x'`.
+- **Under gVisor, sandboxes cannot use Docker's embedded DNS.** `lore-server` never resolved
+  from a `runsc` sandbox. The orchestrator pins its own address on `lore-net` into each sandbox's
+  hosts file (`DockerService`), taken from its container record, not from a name lookup, which
+  returns its address on the *default* network that sandboxes cannot reach.
+- **An internal Docker network still reaches the host.** From a sandbox, the bridge gateway is
+  the host, and its SSH and Caddy answered. The bridge has a fixed name (`lore-net`) so the host
+  firewall can refuse everything arriving from it; on ufw that rule must be inserted *before*
+  the allow rules, because ufw stops at the first match.
+- **`lore` reads stdin whenever it is not a terminal.** In scripts, add `< /dev/null` to an exec
   that must not receive input.
 - **`printf` treats a leading `---` as an option.** Frontmatter written from a shell needs
   `printf -- '---\n...'` or a heredoc.

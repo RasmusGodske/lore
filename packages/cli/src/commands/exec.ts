@@ -3,13 +3,13 @@ import { joinCommand, parse, splitDoubleDash } from "../args.js";
 import { printJson } from "../output.js";
 import { usage } from "../errors.js";
 
-const HELP = `usage: kb exec [ID] [--cwd DIR] [--timeout MS] [--json] -- <command...>
+const HELP = `usage: lore exec [ID] [--cwd DIR] [--timeout MS] [--json] -- <command...>
 
 Runs the command with sh -c in the session's sandbox. The command's stdout, stderr and exit
 code pass through untouched. When stdin is not a terminal it is streamed to the command:
 
-  kb exec -- 'cat > topics/nightly-import.md' < nightly-import.md
-  tar -C docs -c . | kb exec -- 'tar -x -C talks'`;
+  lore exec -- 'cat > topics/nightly-import.md' < nightly-import.md
+  tar -C docs -c . | lore exec -- 'tar -x -C talks'`;
 
 export async function exec(args: string[]) {
   const { own, rest } = splitDoubleDash(args);
@@ -29,6 +29,6 @@ export async function exec(args: string[]) {
   if (values.json) { printJson(r); process.exitCode = r.exit_code; return; }
   process.stdout.write(r.stdout);
   process.stderr.write(r.stderr);
-  if (r.truncated) process.stderr.write("kb-note: output truncated at the server's cap\n");
+  if (r.truncated) process.stderr.write("lore-note: output truncated at the server's cap\n");
   process.exitCode = r.exit_code;
 }

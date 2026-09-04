@@ -159,7 +159,7 @@ piece of work.
 ## Human access
 
 Nothing about the format requires the agent layer. The orchestrator keeps a read-only checkout
-of `main` at `/srv/kb/main`, refreshed on boot and after every landed push, so the repository
+of `main` at `/srv/lore/main`, refreshed on boot and after every landed push, so the repository
 can be opened in any editor, browsed with `rg` and `cat` over SSH, or mounted over SFTP and
 opened in Obsidian, which handles markdown-with-frontmatter and wiki-links natively and gives
 a readable graph view for free. Edits made there are overwritten on the next landing; writes

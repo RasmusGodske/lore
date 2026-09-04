@@ -83,11 +83,22 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   private open() {
     fs.mkdirSync(path.dirname(this.config.dbPath), { recursive: true });
+    this.adoptLegacyFile();
     this.db = new DatabaseSync(this.config.dbPath);
     this.db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
     this.db.exec(TABLES);
     this.migrate();
     this.db.exec(INDEXES);
+  }
+
+  /** The database was called kb.db before the tool was named lore; adopt an existing one once. */
+  private adoptLegacyFile() {
+    const dir = path.dirname(this.config.dbPath);
+    const legacy = path.join(dir, "kb.db");
+    if (fs.existsSync(this.config.dbPath) || !fs.existsSync(legacy)) return;
+    for (const suffix of ["", "-wal", "-shm"]) {
+      if (fs.existsSync(legacy + suffix)) fs.renameSync(legacy + suffix, this.config.dbPath + suffix);
+    }
   }
 
   /** Additive migrations: columns that later versions added to existing tables. */

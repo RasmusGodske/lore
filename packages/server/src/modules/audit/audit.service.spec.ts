@@ -1,5 +1,5 @@
 /**
- * Subject: the audit event wire format (`kb session log`), a pure rendering of a row.
+ * Subject: the audit event wire format (`lore session log`), a pure rendering of a row.
  * Tier: isolated.
  */
 import { describe, it } from "node:test";

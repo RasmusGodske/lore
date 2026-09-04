@@ -1,17 +1,42 @@
-# Shared agent knowledge base
+# lore
 
 A git-backed knowledge base that AI agents and humans read and write through sandboxed
-sessions. The design is in [`spec/`](spec/README.md); this repository is its implementation.
+sessions. `lore` is the command-line client; `lore-server` runs the sessions. The design is in
+[`spec/`](spec/README.md); this repository is its implementation.
+
+## Use an existing lore server
+
+Someone running a server gives you its URL and a token. Then:
+
+```bash
+npm install -g @rasmusgodske/lore                       # needs Node 22 or newer
+lore login https://lore.example.com --token <token>     # saved to ~/.config/lore/config.json
+lore me
+```
+
+Give your agent the same server as an MCP server:
+
+```bash
+claude mcp add --transport http lore https://lore.example.com/mcp --header "Authorization: Bearer <token>"
+```
+
+Tools it gets: `lore_session_create`, `lore_shell` (session_id, command), `lore_session_list`,
+`lore_session_close`. An agent that also has a shell can use `lore` directly, which is the
+path for bulk file transfer. The working instructions agents follow live in the knowledge
+repository itself, at `AGENTS.md`.
+
+Everything below is for running or developing the server.
 
 ```
-packages/server/     NestJS orchestrator: sessions, exec, git smart HTTP + hook, HTTP API, MCP, kb-admin
-packages/cli/        `kb`: the command-line client for humans and agents (no runtime dependencies)
+packages/server/     NestJS orchestrator: sessions, exec, git smart HTTP + hook, HTTP API, MCP, lore-admin
+packages/cli/        `lore`: the command-line client for humans and agents (no runtime dependencies)
 sandbox/Dockerfile   the agent's environment (git, ripgrep, jq, python3, coreutils)
 seed/                initial contents of the knowledge repo (index files, AGENTS.md)
 openapi.json         the HTTP contract, generated from the server; the CLI's types come from it
-docker-compose.yml   local run; the same shape deploys to the VM with KB_SANDBOX_RUNTIME=runsc
+docker-compose.yml   local run; the same shape deploys to the VM with LORE_SANDBOX_RUNTIME=runsc
+deploy/              VM deployment: cloud-init, server creation, Caddy, backups, the guide
 .devcontainer/       everything a contributor needs; docker-in-docker, stack started on create
-data/                created on first run: knowledge.git (bare), main/ (read-only checkout of main), kb.db, sessions/
+data/                created on first run: knowledge.git (bare), main/ (read-only checkout of main), lore.db, sessions/
 ```
 
 ## Develop in the devcontainer
@@ -19,56 +44,45 @@ data/                created on first run: knowledge.git (bare), main/ (read-onl
 Open the repo in VS Code and choose "Reopen in Container". The container has node 22, git,
 docker-in-docker, sqlite3, ripgrep, jq, python3, gh, claude and omp baked in; on first open
 it installs dependencies, builds the images, starts the stack inside its own Docker daemon,
-creates an admin user `dev`, logs the `kb` CLI in, and registers the MCP server with Claude
+creates an admin user `dev`, logs the `lore` CLI in, and registers the MCP server with Claude
 Code. Sandboxes run under `runc` there, since gVisor cannot run inside a nested daemon.
 
 ## Run locally without the devcontainer
 
 ```bash
 docker compose up -d --build
-docker compose exec orchestrator kb-admin user create <you> --admin
-docker compose exec orchestrator kb-admin token create <you> laptop     # prints the token once
+docker compose exec orchestrator lore-admin user create <you> --admin
+docker compose exec orchestrator lore-admin token create <you> laptop     # prints the token once
 ```
 
-The orchestrator listens on `localhost:8480` (`KB_PUBLIC_PORT` changes it) and serves its API
-documentation at `/docs`. Sandboxes run under `runc` locally; set `KB_SANDBOX_RUNTIME=runsc`
+The orchestrator listens on `localhost:8480` (`LORE_PUBLIC_PORT` changes it) and serves its API
+documentation at `/docs`. Sandboxes run under `runc` locally; set `LORE_SANDBOX_RUNTIME=runsc`
 where gVisor is installed.
 
-## Use the CLI
+## Use the CLI against a local stack
 
 ```bash
-npm install && npm run build
-npm install -g ./packages/cli                     # puts `kb` on your PATH
-kb login http://localhost:8480 --token <token>    # saved to ~/.config/kb/config.json
+npm install -g @rasmusgodske/lore                 # or, from this checkout: npm install -g ./packages/cli
+lore login http://localhost:8480 --token <token>
 
-export KB_SESSION=$(kb session create --purpose "How does the nightly import retry?")
-kb exec -- rg -il import topics/
-kb exec -- 'cat > topics/nightly-import.md' < nightly-import.md   # stdin is streamed in
-tar -C docs -c . | kb exec -- 'tar -x -C talks'                # so is a whole archive
-kb exec -- 'git add -A && git commit -m "..." && git push origin HEAD'
-kb session log                                                 # readable transcript; JSONL when piped
-kb session close
+export LORE_SESSION=$(lore session create --purpose "How does the nightly import retry?")
+lore exec -- rg -il import topics/
+lore exec -- 'cat > topics/nightly-import.md' < nightly-import.md   # stdin is streamed in
+tar -C docs -c . | lore exec -- 'tar -x -C talks'                # so is a whole archive
+lore exec -- 'git add -A && git commit -m "..." && git push origin HEAD'
+lore session log                                                 # readable transcript; JSONL when piped
+lore session close
 ```
 
-`KB_URL` and `KB_TOKEN` override the config file, which is how scripts and agents run without
-one. Exit codes: a command's own passes through; 100 to 104 with a `kb:` prefix on stderr mean
+`LORE_URL` and `LORE_TOKEN` override the config file, which is how scripts and agents run without
+one. Exit codes: a command's own passes through; 100 to 104 with a `lore:` prefix on stderr mean
 the request never ran in the sandbox (connection, auth, unknown session, timeout, bad request).
 
 Admins create users and give them their first token; after that users mint their own:
 
 ```bash
-kb user create alice && kb user token alice laptop
+lore user create alice && lore user token alice laptop
 ```
-
-## Connect an agent over MCP
-
-```bash
-claude mcp add --transport http kb http://localhost:8480/mcp --header "Authorization: Bearer <token>"
-```
-
-Tools: `kb_session_create`, `kb_shell` (session_id, command), `kb_session_list`, `kb_session_close`.
-An agent that also has a shell can use `kb` directly, which is the path for bulk file transfer.
-The working instructions agents follow live in the knowledge repo itself, at `AGENTS.md`.
 
 ## Tests
 
@@ -78,7 +92,7 @@ npm run test:stack -w packages/server      # stack tier: real sessions against t
 ```
 
 Tests live beside their subject (`*.spec.ts`) and declare their own cost; the stack tier skips
-itself unless `KB_TEST_URL` and `KB_TEST_ADMIN_TOKEN` are set. `packages/server/test/conventions`
+itself unless `LORE_TEST_URL` and `LORE_TEST_ADMIN_TOKEN` are set. `packages/server/test/conventions`
 holds rules about the codebase itself, such as module boundaries.
 
 ## How it holds together
@@ -89,10 +103,22 @@ holds rules about the codebase itself, such as module boundaries.
   token in the URL. The orchestrator maps the token to a session and sets `REMOTE_USER` for the
   hook, which allows only `session/<own-id>`, fast-forward only, and only commits that already
   contain `main`. Pushes are serialized, and `post-receive` fast-forwards `main`.
-- Users, tokens, sessions and audit events are rows in `data/kb.db` (SQLite). Every audit row
+- Users, tokens, sessions and audit events are rows in `data/lore.db` (SQLite). Every audit row
   records who acted, from which IP, and up to 64 KB of each stream.
 - The server is organised as NestJS modules under `packages/server/src/modules/`, each with a
   README saying what it hides and an `index.ts` that is its only importable surface.
+
+## Deploy on a VM
+
+See [`deploy/README.md`](deploy/README.md): one Ubuntu server with Docker, gVisor and Caddy,
+created from `deploy/cloud-init.yml`, running the published images from
+`ghcr.io/rasmusgodske/lore-server` and `lore-sandbox`, with nightly backups.
+
+## Releases
+
+A version tag publishes everything: `git tag v0.1.0 && git push origin v0.1.0` runs the tests,
+pushes both images to the GitHub Container Registry, and publishes `@rasmusgodske/lore` to npm
+with the same version. See `.github/workflows/release.yml`.
 
 ## Browse the knowledge directly
 
@@ -102,7 +128,7 @@ on the next landing. Writes go through a session.
 
 ```bash
 ls data/main
-git clone data/knowledge.git /tmp/kb && ls /tmp/kb
+git clone data/knowledge.git /tmp/lore && ls /tmp/lore
 git --git-dir=data/knowledge.git log --oneline main
-sqlite3 data/kb.db 'select ts, session_id, op, cmd, exit_code from audit_events order by id desc limit 20'
+sqlite3 data/lore.db 'select ts, session_id, op, cmd, exit_code from audit_events order by id desc limit 20'
 ```

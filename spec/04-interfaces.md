@@ -9,7 +9,7 @@ different things:
   common case: agents connect over remote MCP (streamable HTTP) with a bearer token.
 - **HTTP API** — anything programmatic, and any environment that cannot do MCP. This is
   what makes the system usable from a Slack agent, a webhook handler, or a script.
-- **CLI** — one binary, `kb`: a first-class interface for humans and for agents that have
+- **CLI** — one binary, `lore`: a first-class interface for humans and for agents that have
   a shell, and a thin client over the HTTP API. What a caller may do is decided by its
   token, not by which commands exist.
 
@@ -35,12 +35,12 @@ MCP endpoint are two routes on the same process over it, and the CLI calls the H
 ## Identity and auth
 
 **Users** have a name and an admin flag. Only admins create users; the very first admin
-and its token are created with `kb-admin` inside the orchestrator container, which talks to
+and its token are created with `lore-admin` inside the orchestrator container, which talks to
 the database directly. A bot that belongs to nobody is a user with no login, only tokens.
 
 **Tokens** belong to a user and carry a label (`claude-code-laptop`, `slack-agent`). Users
 mint their own tokens; an admin may also mint one for any user (`POST /users/{id}/tokens`,
-`kb user token <user> <label>`), which is how a new user gets their first token. Every HTTP
+`lore user token <user> <label>`), which is how a new user gets their first token. Every HTTP
 API and MCP request carries one as `Authorization: Bearer <token>`; only a hash is stored.
 
 **Permissions** are the admin flag plus ownership, nothing else. Every token may create
@@ -81,34 +81,34 @@ things. Concretely: results on stdout, diagnostics on stderr, meaningful exit co
 interactive prompts, machine-readable output available.
 
 ```bash
-kb login http://host:8080 --token <token>   # writes ~/.config/kb/config.json
-kb me                                       # KB_URL and KB_TOKEN override the file
+lore login http://host:8080 --token <token>   # writes ~/.config/lore/config.json
+lore me                                       # LORE_URL and LORE_TOKEN override the file
 
-kb session create --purpose "Why did the nightly import skip a run?"
+lore session create --purpose "Why did the nightly import skip a run?"
 # k7m2xq
 
-kb exec k7m2xq -- rg -l 'nightly import' topics/
-kb exec k7m2xq --cwd topics/nightly-import --timeout 5000 -- cat index.md
-export KB_SESSION=k7m2xq                    # the ID may then be omitted
-kb exec -- 'cat > topics/nightly-import/index.md' < index.md
-tar -C docs -c . | kb exec -- 'tar -x -C talks'
+lore exec k7m2xq -- rg -l 'nightly import' topics/
+lore exec k7m2xq --cwd topics/nightly-import --timeout 5000 -- cat index.md
+export LORE_SESSION=k7m2xq                    # the ID may then be omitted
+lore exec -- 'cat > topics/nightly-import/index.md' < index.md
+tar -C docs -c . | lore exec -- 'tar -x -C talks'
 
-kb session list --json | jq -r '.[] | select(.state=="active") | .id'
-kb session log k7m2xq --json | jq 'select(.exit != 0)'
-kb session close k7m2xq
+lore session list --json | jq -r '.[] | select(.state=="active") | .id'
+lore session log k7m2xq --json | jq 'select(.exit != 0)'
+lore session close k7m2xq
 
-kb token create --label slack-agent         # my own tokens: create | list | revoke
-kb user create bot && kb user token bot slack   # admin: users, and anyone's tokens
+lore token create --label slack-agent         # my own tokens: create | list | revoke
+lore user create bot && lore user token bot slack   # admin: users, and anyone's tokens
 ```
 
-`kb exec` streams its stdin to the command whenever stdin is not a terminal, which is how
+`lore exec` streams its stdin to the command whenever stdin is not a terminal, which is how
 bulk data — a file, a tar stream — gets into a workspace (`02-session-lifecycle.md`). The
-session ID may be omitted when `KB_SESSION` is set; nothing is persisted as a "current
+session ID may be omitted when `LORE_SESSION` is set; nothing is persisted as a "current
 session", so two shells never fight over one.
 
 Output is JSON when stdout is not a terminal and tables (for `session log`, a readable
 transcript) when it is; `--json` forces JSON. Because it is well-behaved, it composes: an
-agent with bash and an authenticated `kb` on its PATH can pipe `kb` output into `jq`,
+agent with bash and an authenticated `lore` on its PATH can pipe `lore` output into `jq`,
 `grep`, `xargs`, or its own scripts, without any of that being designed for.
 
 ## HTTP API
@@ -134,7 +134,7 @@ POST   /mcp                       -> MCP over streamable HTTP (below)
 `exec` takes `{command, cwd?, timeout_ms?}`; default 60 s, maximum 10 minutes, returned
 output capped at 1 MB. `exec/stdin` is the same operation for bulk input: an
 `application/octet-stream` body that becomes the command's stdin, with the command
-percent-encoded in the `x-kb-command` header and `x-kb-cwd` / `x-kb-timeout-ms` for the
+percent-encoded in the `x-lore-command` header and `x-lore-cwd` / `x-lore-timeout-ms` for the
 rest. A command that hits its timeout is a 504; a malformed request is a 400; exec or close
 on a session you do not own is a 403. Long-running commands would otherwise need streaming;
 a timeout with a clear error is simpler and sufficient. The full contract is the OpenAPI
@@ -152,7 +152,7 @@ same process as the API. Agents connect directly with a bearer token; there is n
 stdio bridge in the first version:
 
 ```bash
-claude mcp add --transport http kb http://host:8080/mcp \
+claude mcp add --transport http lore http://host:8080/mcp \
   --header "Authorization: Bearer <token>"
 ```
 
@@ -160,10 +160,10 @@ Four tools:
 
 | Tool | Arguments |
 |---|---|
-| `kb_session_create` | `purpose?` — returns the session ID |
-| `kb_session_list` | — |
-| `kb_session_close` | `session_id` |
-| `kb_shell` | `session_id`, `command`, `cwd?`, `timeout_ms?` |
+| `lore_session_create` | `purpose?` — returns the session ID |
+| `lore_session_list` | — |
+| `lore_session_close` | `session_id` |
+| `lore_shell` | `session_id`, `command`, `cwd?`, `timeout_ms?` |
 
 **Sessions are explicit.** An earlier draft folded session creation into first use, one
 session per MCP connection, on the grounds that an agent will forget to call create. It was
@@ -172,10 +172,10 @@ lazily created session has no purpose. The forgetting risk is real and is
 covered by the idle reaper (`02-session-lifecycle.md`): an unclosed session costs one idle
 container for at most the idle timeout.
 
-**Name the exec tool for what it is.** Something like `kb_shell` with a description making
+**Name the exec tool for what it is.** Something like `lore_shell` with a description making
 clear it is a real shell in a sandboxed checkout of the knowledge base, that `/workspace` is
 a git repo, and that landing changes means committing and pushing. Tool calls carry no
-stdin, so the description also points agents that have a shell at the `kb` CLI for bulk
+stdin, so the description also points agents that have a shell at the `lore` CLI for bulk
 transfers. The description is where the agent learns the workflow.
 
 Alongside the tools, ship the working instructions — what to write, when, where things go —
@@ -193,7 +193,7 @@ never help.
 If the shell command itself fails, return its exit code and stderr verbatim.
 
 ```
-$ kb exec k7m2xq -- cat topics/nightly-import/nope.md
+$ lore exec k7m2xq -- cat topics/nightly-import/nope.md
 cat: topics/nightly-import/nope.md: No such file or directory
 $ echo $?
 1
@@ -216,19 +216,19 @@ unmistakable stderr prefix.
 | 104 | Bad request — malformed call |
 
 ```
-$ kb exec k7m2xq -- ls
-kb: connection error: could not reach orchestrator at kb-orchestrator:8080
+$ lore exec k7m2xq -- ls
+lore: connection error: could not reach orchestrator at lore-server:8080
 $ echo $?
 100
 ```
 
 Two things distinguish these, deliberately, because either alone is imperfect. The exit
 codes sit above the range real commands use in practice, but nothing stops some program from
-returning 100 legitimately. The `kb:` stderr prefix disambiguates: transport errors always
+returning 100 legitimately. The `lore:` stderr prefix disambiguates: transport errors always
 carry it, and passed-through command errors never do. An agent (or a script) can key on
 either.
 
-Corollary: **the CLI must never print `kb:`-prefixed lines for anything but its own
+Corollary: **the CLI must never print `lore:`-prefixed lines for anything but its own
 failures.** Use a different prefix or stdout for ordinary chatter.
 
 ### HTTP equivalents

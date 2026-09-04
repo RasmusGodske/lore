@@ -4,4 +4,5 @@ Hides the host Docker daemon: how a sandbox container is created (image, runtime
 network, read-only root, dropped capabilities, uid 1000, resource limits), how a command is run
 inside it with stdin streamed and stdout/stderr demultiplexed and capped, how a timeout is
 enforced (coreutils `timeout` inside the container plus a backstop timer), and how containers are
-listed and removed. Every daemon failure surfaces as a transport error 100.
+listed and removed. The orchestrator's address is pinned into each sandbox's hosts file, because
+under gVisor the container cannot reach Docker's embedded DNS. Every daemon failure surfaces as a transport error 100.

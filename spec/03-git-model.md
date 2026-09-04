@@ -19,7 +19,7 @@ already exists.
 
 ## Repository layout
 
-**One bare repository** at `/srv/kb/knowledge.git`. This is the permanent source of truth.
+**One bare repository** at `/srv/lore/knowledge.git`. This is the permanent source of truth.
 It is not mounted into any sandbox.
 
 Branches:
@@ -37,7 +37,7 @@ For each request the orchestrator validates the token, maps it to its session, a
 `http-backend` with the standard CGI variables plus:
 
 ```
-GIT_PROJECT_ROOT=/srv/kb
+GIT_PROJECT_ROOT=/srv/lore
 GIT_HTTP_EXPORT_ALL=1
 PATH_INFO=/knowledge.git/<rest of path>
 REMOTE_USER=<session-id>
@@ -63,7 +63,7 @@ the push response completes, so a `session log` read straight after a push alrea
 ### Identity
 
 Each session gets a random git token at creation; the sandbox's `origin` remote is
-`http://kb-orchestrator:8080/git/<git-token>/knowledge.git`. The orchestrator stores only a
+`http://lore-server:8080/git/<git-token>/knowledge.git`. The orchestrator stores only a
 hash of the token, maps it to the session ID, and sets that ID as `REMOTE_USER`. The hook
 reads `$REMOTE_USER`. A token is dead once its session closes.
 
@@ -72,7 +72,7 @@ our own agents, the token is unguessable, and it is reachable only on the intern
 
 ## The pre-receive hook
 
-Lives at `/srv/kb/knowledge.git/hooks/pre-receive`. Runs on the receiving side. **The agent
+Lives at `/srv/lore/knowledge.git/hooks/pre-receive`. Runs on the receiving side. **The agent
 cannot read, edit, or disable it** — it is not in the workspace and not reachable from the
 sandbox. This is the entire enforcement layer.
 
@@ -93,7 +93,7 @@ SESSION="${REMOTE_USER:-}"
 ZERO="0000000000000000000000000000000000000000"
 
 if [[ -z "$SESSION" ]]; then
-  echo "kb: no session identity on this push; refusing." >&2
+  echo "lore: no session identity on this push; refusing." >&2
   exit 1
 fi
 
@@ -101,25 +101,25 @@ while read -r oldsha newsha ref; do
 
   # 1. Only session branches may be pushed. No direct writes to main.
   if [[ "$ref" != "refs/heads/session/"* ]]; then
-    echo "kb: '$ref' is not writable. Push to refs/heads/session/$SESSION instead." >&2
+    echo "lore: '$ref' is not writable. Push to refs/heads/session/$SESSION instead." >&2
     exit 1
   fi
 
   # 2. A session may only push its own branch, and may not delete it.
   if [[ "$ref" != "refs/heads/session/$SESSION" ]]; then
-    echo "kb: session '$SESSION' may not push to '$ref'." >&2
+    echo "lore: session '$SESSION' may not push to '$ref'." >&2
     exit 1
   fi
   if [[ "$newsha" == "$ZERO" ]]; then
-    echo "kb: branch deletion is not permitted." >&2
+    echo "lore: branch deletion is not permitted." >&2
     exit 1
   fi
 
   # 3. No history rewriting: new commit must descend from old.
   if [[ "$oldsha" != "$ZERO" ]]; then
     if ! git merge-base --is-ancestor "$oldsha" "$newsha"; then
-      echo "kb: non-fast-forward push rejected; do not rewrite history." >&2
-      echo "kb: run: git fetch origin && git merge origin/session/$SESSION, then push again." >&2
+      echo "lore: non-fast-forward push rejected; do not rewrite history." >&2
+      echo "lore: run: git fetch origin && git merge origin/session/$SESSION, then push again." >&2
       exit 1
     fi
   fi
@@ -127,13 +127,13 @@ while read -r oldsha newsha ref; do
   # 4. Must contain current main.
   MAIN=$(git rev-parse refs/heads/main)
   if ! git merge-base --is-ancestor "$MAIN" "$newsha"; then
-    echo "kb: your branch is behind main and would not fast-forward." >&2
-    echo "kb: run: git fetch origin && git merge origin/main" >&2
-    echo "kb: resolve any conflicts, commit, and push again." >&2
+    echo "lore: your branch is behind main and would not fast-forward." >&2
+    echo "lore: run: git fetch origin && git merge origin/main" >&2
+    echo "lore: resolve any conflicts, commit, and push again." >&2
     exit 1
   fi
 
-  echo "kb: accepted $ref." >&2
+  echo "lore: accepted $ref." >&2
 
 done
 
@@ -155,7 +155,7 @@ pushed commit:
 set -euo pipefail
 while read -r oldsha newsha ref; do
   git update-ref refs/heads/main "$newsha" "$(git rev-parse refs/heads/main)"
-  echo "kb: landed; main is now $newsha." >&2
+  echo "lore: landed; main is now $newsha." >&2
 done
 ```
 
@@ -216,7 +216,7 @@ state of `main`.
 Entirely separate from the agent workflow, purely for backup and browsing:
 
 ```bash
-git --git-dir=/srv/kb/knowledge.git push --mirror github
+git --git-dir=/srv/lore/knowledge.git push --mirror github
 ```
 
 Run from a cron job or the orchestrator. Nothing in the system depends on it existing.

@@ -1,4 +1,4 @@
-# @kb/server
+# @lore/server
 
 The orchestrator: a NestJS application that owns sessions, runs commands in sandboxes, serves
 the knowledge repository over git smart HTTP, enforces the push rules, and exposes everything
@@ -22,7 +22,7 @@ mcp ─────────────► sessions, auth    the four MCP to
 ```
 
 Root-level files are framework glue: `main.ts` (boot), `app.module.ts`, `openapi.ts` (prints
-the document), `admin.ts` (`kb-admin`, direct-database bootstrap run inside the container).
+the document), `admin.ts` (`lore-admin`, direct-database bootstrap run inside the container).
 
 ## Commands
 
@@ -30,12 +30,12 @@ the document), `admin.ts` (`kb-admin`, direct-database bootstrap run inside the 
 npm run build          # nest build -> dist/
 npm run openapi        # regenerate ../../openapi.json from the built server
 npm test               # isolated tier + conventions
-npm run test:stack     # stack tier against the local compose stack (needs data/.token-dev or KB_TEST_ADMIN_TOKEN)
+npm run test:stack     # stack tier against the local compose stack (needs data/.token-dev or LORE_TEST_ADMIN_TOKEN)
 ```
 
 ## Configuration
 
-All settings are `KB_*` environment variables validated at boot by `modules/config`. The ones
-that matter locally: `KB_HOST_DATA_DIR` (the data directory as the host daemon sees it, for
-bind mounts), `KB_SANDBOX_RUNTIME` (`runc` or `runsc`), `KB_ORCHESTRATOR_HOST` (the name
+All settings are `LORE_*` environment variables validated at boot by `modules/config`. The ones
+that matter locally: `LORE_HOST_DATA_DIR` (the data directory as the host daemon sees it, for
+bind mounts), `LORE_SANDBOX_RUNTIME` (`runc` or `runsc`), `LORE_SERVER_HOST` (the name
 sandboxes use to reach this server for `git push`).

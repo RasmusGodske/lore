@@ -27,7 +27,7 @@ describe("sessions", { skip: stack ? false : skipReason }, () => {
     assert.equal(r.status, 200);
     assert.equal(r.json.exit_code, 0);
     assert.match(r.json.stdout, new RegExp(`^session/${id}\\n`));
-    assert.match(r.json.stdout, /\/git\/kbg_[0-9a-f]+\/knowledge\.git/);
+    assert.match(r.json.stdout, /\/git\/loreg_[0-9a-f]+\/knowledge\.git/);
     assert.match(r.json.stdout, /agents-ok/);
   });
 
@@ -35,7 +35,7 @@ describe("sessions", { skip: stack ? false : skipReason }, () => {
     const id = await open(owner, "isolation");
     const r = await owner.exec(id, "id -u; touch /usr/bin/x 2>&1; echo exit=$?");
     assert.match(r.json.stdout, /^1000\n/);
-    assert.match(r.json.stdout, /[Rr]ead-only file system/);
+    assert.match(r.json.stdout, /[Rr]ead-only file system|Permission denied/); // gVisor reports EACCES, runc EROFS
   });
 
   it("passes a command's non-zero exit and stderr through as a successful call", async () => {
@@ -66,8 +66,8 @@ describe("sessions", { skip: stack ? false : skipReason }, () => {
     const id = await open(owner, "push");
     const r = await owner.exec(id, `mkdir -p topics/t-${id} && echo "---\ntitle: T\ntype: Topic\n---" > topics/t-${id}/index.md && git add -A && git commit -qm "test ${id}" && git push origin HEAD 2>&1`);
     assert.equal(r.json.exit_code, 0, r.json.stdout + r.json.stderr);
-    assert.match(r.json.stdout, /kb: accepted refs\/heads\/session\//);
-    assert.match(r.json.stdout, /kb: landed; main is now/);
+    assert.match(r.json.stdout, /lore: accepted refs\/heads\/session\//);
+    assert.match(r.json.stdout, /lore: landed; main is now/);
     const log = await owner.call("GET", `/sessions/${id}/log?format=json`);
     const push = log.json.find((e: any) => e.op === "push");
     assert.equal(push.result, "accepted");
@@ -79,9 +79,9 @@ describe("sessions", { skip: stack ? false : skipReason }, () => {
     const marker = `mirror-${id}`;
     const r = await owner.exec(id, `echo ${marker} > ${marker}.md && git add -A && git commit -qm "${marker}" && git push origin HEAD 2>&1 | grep -c landed`);
     assert.equal(r.json.stdout.trim(), "1");
-    const dataDir = process.env.KB_TEST_DATA_DIR;
-    if (!dataDir) return; // the checkout can only be inspected when the test runs beside the data directory
+    const dataDir = process.env.LORE_TEST_DATA_DIR;
     const fs = await import("node:fs");
+    if (!dataDir || !fs.existsSync(`${dataDir}/main`)) return; // only inspectable when the test runs beside the data directory
     assert.equal(fs.readFileSync(`${dataDir}/main/${marker}.md`, "utf8").trim(), marker);
   });
 

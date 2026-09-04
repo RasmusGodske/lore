@@ -1,0 +1,5 @@
+# Reference copy of what cloud-init writes to /etc/caddy/Caddyfile.
+lore.example.com {
+  encode gzip
+  reverse_proxy 127.0.0.1:8480
+}

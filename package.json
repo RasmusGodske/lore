@@ -1,7 +1,9 @@
 {
-  "name": "kb",
+  "name": "lore",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "npm run build -w packages/server -w packages/cli",
     "test": "npm test -w packages/server -w packages/cli",
