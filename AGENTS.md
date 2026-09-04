@@ -115,6 +115,15 @@ with the NestJS binding written from this repo. The parts a test will fail you o
 - The **push audit row is written before the push response ends**, so a log read right after
   `git push` returns sees it. Keep it that way (there is a stack test for it).
 
+## Releasing
+
+A release is a tag. Before pushing one, both test tiers must be green: `npm test`, and the stack
+tier against the local stack in **both** modes, standalone and with `LORE_REMOTE_URL` pointing
+at a local bare repository (`git init --bare data/remote-test.git`, owned by root, started with
+`LORE_REMOTE_URL=file:///srv/lore/remote-test.git docker compose up -d`). Chain the steps with
+`&&`, never `;`: version 0.1.8 shipped with a remote-mode bug because a chain continued past a
+failing suite. Published versions cannot be replaced; a bad release is fixed by the next tag.
+
 ## Where things are decided
 
 - Product and architecture decisions: `spec/`. Update the spec in the same change as the code.
