@@ -155,6 +155,10 @@ writing. lore seeds a new repository with nothing but an OKF bundle root (`index
 `okf_version`), and validates no content, so a team can organise its repository however it
 likes.
 
+lore also ships a vendored copy of the OKF specification (Apache-2.0), served at `GET /guide/okf`
+and as `lore guide okf`, so the format is readable without a network. The guide summarises the
+four rules that make a file valid OKF and points there for the rest.
+
 What lore does explain, once and in one place, is its own mechanism: sessions, reading through
 index files, landing changes, conflicts, bulk data, and the audit trail. That text is the
 server's MCP instructions, `GET /guide`, and `lore guide`.

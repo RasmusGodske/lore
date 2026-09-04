@@ -17,7 +17,7 @@ const HELP = `usage: lore <command> [args]
 
   login <url> --token T    save server and token to the config file
   me                       who the current token belongs to
-  guide                    how lore works: sessions, landing changes, conflicts, bulk data
+  guide [okf]              how lore works; "guide okf" prints the OKF specification
   session <subcommand>     create | list | show | close | log
   exec [ID] -- <cmd...>    run a command in a session (streams stdin when piped)
   token <subcommand>       create | list | revoke

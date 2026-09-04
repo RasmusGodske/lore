@@ -43,6 +43,20 @@ If the push is rejected because main moved:
 
 resolve any conflict markers in the files, commit, and push again. Never rebase or force-push.
 
+## The format
+
+Documents follow the Open Knowledge Format, which asks for little:
+
+- Every document starts with a YAML frontmatter block, and that block has a type.
+- index.md is the table of contents of its directory and carries no frontmatter, except the
+  root one, which declares okf_version.
+- log.md is reserved for a chronological history of changes.
+- Optional fields record where facts came from and how fresh they are: sources, generated,
+  verified, stale_after, status.
+
+The full specification is available as \`lore guide okf\` or GET /guide/okf. Nothing is
+validated by the server; the format is a convention readers rely on, not a gate.
+
 ## Bulk data
 
 Command output is capped at 1 MB. To move files in, use the lore command-line client on the

@@ -573,6 +573,21 @@
           "guide"
         ]
       }
+    },
+    "/guide/okf": {
+      "get": {
+        "operationId": "GuideController_okf",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "The Open Knowledge Format specification lore documents follow, vendored (Apache-2.0, Google LLC)",
+        "tags": [
+          "guide"
+        ]
+      }
     }
   },
   "info": {
