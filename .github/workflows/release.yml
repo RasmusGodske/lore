@@ -61,4 +61,5 @@ jobs:
       - run: npm ci && npm run build -w packages/cli
       - name: set the version from the tag
         run: cd packages/cli && npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
-      - run: cd packages/cli && npm publish --access public --provenance
+      # Provenance attestations are only accepted from public repositories; follow the visibility.
+      - run: cd packages/cli && npm publish --access public --provenance=${{ github.event.repository.visibility == 'public' }}
