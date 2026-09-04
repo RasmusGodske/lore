@@ -24,7 +24,9 @@ data/                 runtime state (gitignored): knowledge.git (bare), main/ (r
 lore does not dictate what a knowledge repository contains. The seed is an empty OKF bundle
 root; a team's writing conventions live in their own repository under whatever name they choose.
 How lore itself works is explained once, in `packages/server/src/modules/guide/guide.ts`, and
-served as the MCP instructions, `GET /guide`, and `lore guide`.
+served as the MCP instructions, `GET /guide`, `lore guide`, and the `lore_guide` tool. The OKF
+specification is vendored at `vendor/okf/SPEC.md`; `npm run vendor:okf` in `packages/server`
+regenerates the TypeScript copy the server embeds, and the sandbox image copies the file.
 
 ## Run, test, regenerate
 
@@ -38,6 +40,7 @@ lore login http://localhost:8480 --token <token>
 npm test                                         # isolated tier, no Docker: unit + conventions
 npm run test:stack -w packages/server            # stack tier against the running compose stack
 npm run openapi                                  # after changing any route or DTO: regenerates openapi.json AND the CLI types
+npm run vendor:okf -w packages/server            # after replacing vendor/okf/SPEC.md
 ```
 
 The stack tier reads the admin token from `data/.token-dev` (written by the devcontainer's

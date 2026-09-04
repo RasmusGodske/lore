@@ -164,6 +164,7 @@ Four tools:
 | `lore_session_list` | — |
 | `lore_session_close` | `session_id` |
 | `lore_shell` | `session_id`, `command`, `cwd?`, `timeout_ms?` |
+| `lore_guide` | `topic?` — `lore` (default) returns the guide, `okf` the full OKF specification |
 
 **Sessions are explicit.** An earlier draft folded session creation into first use, one
 session per MCP connection, on the grounds that an agent will forget to call create. It was
@@ -183,9 +184,14 @@ as documented in `05-knowledge-format.md`. Those matter more than the tool surfa
 
 ### The guide
 
-How lore works is written once, in the server, and served three ways: as the MCP server's
-initialize instructions, at `GET /guide` as markdown, and as `lore guide`. It covers the
-mechanism only. Conventions about content are the knowledge repository's own (spec 05).
+How lore works is written once, in the server, and served four ways: as the MCP server's
+initialize instructions, through the `lore_guide` tool, at `GET /guide` as markdown, and as
+`lore guide`. It covers the mechanism only, plus a short section on the format. The full OKF
+specification is vendored and equally reachable: `lore_guide` with topic `okf`, `GET /guide/okf`,
+`lore guide okf`, and `/usr/share/lore/OKF-SPEC.md` inside every sandbox. Nothing requires an
+agent to read it; the intent is that a team reads once, writes its own conventions into its
+repository, and agents follow those from then on. Conventions about content are the knowledge
+repository's own (spec 05).
 
 ### `lore mcp`: the stdio bridge
 

@@ -9,7 +9,8 @@
     "dev": "nest start --watch",
     "openapi": "node dist/openapi.js > ../../openapi.json",
     "test": "node --test --disable-warning=ExperimentalWarning --import tsx --test-reporter=spec 'src/**/*.spec.ts' 'test/**/*.spec.ts'",
-    "test:stack": "LORE_TEST_URL=${LORE_TEST_URL:-http://localhost:8480} LORE_TEST_ADMIN_TOKEN=${LORE_TEST_ADMIN_TOKEN:-$(cat ../../data/.token-dev)} LORE_TEST_DATA_DIR=${LORE_TEST_DATA_DIR:-$(cd ../.. && pwd)/data} npm test"
+    "test:stack": "LORE_TEST_URL=${LORE_TEST_URL:-http://localhost:8480} LORE_TEST_ADMIN_TOKEN=${LORE_TEST_ADMIN_TOKEN:-$(cat ../../data/.token-dev)} LORE_TEST_DATA_DIR=${LORE_TEST_DATA_DIR:-$(cd ../.. && pwd)/data} npm test",
+    "vendor:okf": "node scripts/vendor-okf.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

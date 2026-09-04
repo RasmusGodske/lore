@@ -10,6 +10,12 @@ lore is a knowledge base kept as plain markdown files in a git repository, follo
 Open Knowledge Format. People and AI agents read and write it the same way: through a
 session, which is a sandboxed shell in a private checkout of the repository.
 
+This guide explains the mechanism so you can start without anyone explaining it to you. Read
+it once. A team that uses lore seriously then writes its own conventions, in its repository
+(an AGENTS.md, a skill, a CONTRIBUTING file): the directory layout it wants, the document
+types it uses, when to write. After that, those conventions are what to follow; this guide
+only gets you to that point.
+
 ## Sessions
 
 - Create a session for a task; it gives you /workspace, a clone of the current main on a
@@ -54,8 +60,10 @@ Documents follow the Open Knowledge Format, which asks for little:
 - Optional fields record where facts came from and how fresh they are: sources, generated,
   verified, stale_after, status.
 
-The full specification is available as \`lore guide okf\` or GET /guide/okf. Nothing is
-validated by the server; the format is a convention readers rely on, not a gate.
+You do not have to read the full specification, but it is one step away whenever you want it:
+the lore_guide tool with topic "okf" (MCP), /usr/share/lore/OKF-SPEC.md inside any session,
+\`lore guide okf\` (CLI), or GET /guide/okf (HTTP). Nothing is validated by the server; the
+format is a convention readers rely on, not a gate.
 
 ## Bulk data
 

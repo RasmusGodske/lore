@@ -33,8 +33,9 @@ describe("sessions", { skip: stack ? false : skipReason }, () => {
 
   it("runs as an unprivileged user with a read-only root filesystem", async () => {
     const id = await open(owner, "isolation");
-    const r = await owner.exec(id, "id -u; touch /usr/bin/x 2>&1; echo exit=$?");
+    const r = await owner.exec(id, "id -u; touch /usr/bin/x 2>&1; echo exit=$?; head -1 /usr/share/lore/OKF-SPEC.md");
     assert.match(r.json.stdout, /^1000\n/);
+    assert.match(r.json.stdout, /Open Knowledge Format/); // the spec ships inside every sandbox
     assert.match(r.json.stdout, /[Rr]ead-only file system|Permission denied/); // gVisor reports EACCES, runc EROFS
   });
 

@@ -43,7 +43,8 @@ jobs:
             ghcr.io/rasmusgodske/lore-server:latest
       - uses: docker/build-push-action@v6
         with:
-          context: sandbox
+          context: .
+          file: sandbox/Dockerfile
           push: true
           tags: |
             ghcr.io/rasmusgodske/lore-sandbox:${{ steps.version.outputs.v }}

@@ -28,9 +28,13 @@ claude mcp add --transport http lore https://lore.example.com/mcp --header "Auth
 ```
 
 Tools it gets: `lore_session_create`, `lore_shell` (session_id, command), `lore_session_list`,
-`lore_session_close`, plus the guide to how lore works as the server's instructions. The same
-guide is `lore guide` on the command line and `GET /guide` on the API. What a team writes and
-where is the team's own convention, kept in their knowledge repository; lore does not dictate it.
+`lore_session_close`, and `lore_guide`. The guide to how lore works arrives as the server's
+instructions on connect; the same text is `lore guide` on the command line and `GET /guide` on
+the API. The Open Knowledge Format specification that documents follow is one step away from
+everywhere: `lore_guide` with topic `okf`, `/usr/share/lore/OKF-SPEC.md` inside any session,
+`lore guide okf`, or `GET /guide/okf`. Nothing forces an agent to read it, and nothing is
+validated: a team reads once, writes its own conventions into its repository, and agents
+follow those. Lore does not dictate what a repository contains.
 
 Everything below is for running or developing the server.
 

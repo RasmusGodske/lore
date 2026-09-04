@@ -31,7 +31,9 @@ services:
 
   # Builds the sandbox image and exits; sessions run from lore-sandbox:latest.
   sandbox-image:
-    build: ./sandbox
+    build:
+      context: .
+      dockerfile: sandbox/Dockerfile
     image: ghcr.io/rasmusgodske/lore-sandbox:${LORE_VERSION:-latest}
     command: ["true"]
     restart: "no"

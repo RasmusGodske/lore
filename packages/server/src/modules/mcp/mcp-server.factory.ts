@@ -4,7 +4,7 @@ import { z } from "zod";
 import { SessionsService } from "../sessions";
 import { TransportError } from "../api";
 import type { Principal } from "../auth";
-import { GUIDE } from "../guide";
+import { GUIDE, OKF_SPEC } from "../guide";
 
 const SHELL_DESCRIPTION = `Run a shell command inside a sandboxed checkout of the knowledge base.
 
@@ -31,6 +31,12 @@ export class McpServerFactory {
   build(p: Principal): McpServer {
     const server = new McpServer({ name: "lore", version: "0.1.0" }, { instructions: GUIDE });
     const sessions = this.sessions;
+
+    server.registerTool("lore_guide", {
+      title: "How lore works, or the OKF specification",
+      description: "Returns the guide to how lore works (the same text as these instructions), or with topic \"okf\" the full Open Knowledge Format specification that documents follow. Read the specification when you need more than the guide's short format section, for example before designing a repository's layout or conventions.",
+      inputSchema: { topic: z.enum(["lore", "okf"]).optional().describe("\"lore\" (default) or \"okf\"") },
+    }, async ({ topic }) => text(topic === "okf" ? OKF_SPEC : GUIDE));
 
     server.registerTool("lore_session_create", {
       title: "Create knowledge-base session",
