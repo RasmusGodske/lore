@@ -11,7 +11,12 @@ lore session <cmd>            create | list | show | close | log
 lore exec [ID] -- <cmd...>    run a command in a session; stdin is streamed when piped
 lore token <cmd>              create | list | revoke
 lore user <cmd>               create | list | token          (admin only)
+lore mcp                    MCP server over stdio, relaying to the logged-in server
 ```
+
+`lore mcp` lets any MCP client use the saved login: `claude mcp add lore -- lore mcp`. Each
+JSON-RPC message becomes one request to the server's `/mcp` endpoint; the tool definitions live
+in the server, the CLI only relays.
 
 `LORE_URL` and `LORE_TOKEN` override the config file. `LORE_SESSION` is the default session id.
 Output is JSON when stdout is not a terminal, readable otherwise; `--json` forces JSON.

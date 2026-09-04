@@ -23,7 +23,7 @@ const codeForStatus = (status: number, fallback: number): CliError["code"] => {
 
 /** Thin typed client over the orchestrator's HTTP API. Nothing but fetch. */
 export class LoreClient {
-  constructor(private readonly url: string, private readonly token: string) {}
+  constructor(private readonly url: string, readonly token: string) {}
 
   private async request<T>(method: string, path: string, init: { json?: unknown; body?: Readable; headers?: Record<string, string>; raw?: boolean } = {}): Promise<T> {
     const headers: Record<string, string> = { authorization: `Bearer ${this.token}`, ...init.headers };

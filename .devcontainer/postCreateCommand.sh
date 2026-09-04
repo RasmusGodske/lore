@@ -25,7 +25,7 @@ if [ ! -f data/.token-dev ]; then
 fi
 lore login http://localhost:8480 --token "$(cat data/.token-dev)"
 echo "== registering the MCP server with claude (local scope)"
-claude mcp add --transport http lore http://localhost:8480/mcp --header "Authorization: Bearer $(cat data/.token-dev)" >/dev/null 2>&1 || true
+claude mcp add lore -- lore mcp >/dev/null 2>&1 || true
 
 echo
 echo "ready: stack on http://localhost:8480 (docs at /docs), lore logged in as 'dev'."

@@ -14,7 +14,14 @@ lore login https://lore.example.com --token <token>     # saved to ~/.config/lor
 lore me
 ```
 
-Give your agent the same server as an MCP server:
+Give your agent the same server as an MCP server. The CLI speaks MCP over stdio and relays to
+the server you logged into, so no URL or token goes into the client's configuration:
+
+```bash
+claude mcp add lore -- lore mcp
+```
+
+Clients that can talk to a remote MCP server directly may skip the CLI:
 
 ```bash
 claude mcp add --transport http lore https://lore.example.com/mcp --header "Authorization: Bearer <token>"

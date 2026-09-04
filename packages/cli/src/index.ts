@@ -10,6 +10,7 @@ import { exec } from "./commands/exec.js";
 import { token } from "./commands/token.js";
 import { user } from "./commands/user.js";
 import { login, me } from "./commands/login.js";
+import { mcp } from "./commands/mcp.js";
 
 const HELP = `usage: lore <command> [args]
 
@@ -19,11 +20,13 @@ const HELP = `usage: lore <command> [args]
   exec [ID] -- <cmd...>    run a command in a session (streams stdin when piped)
   token <subcommand>       create | list | revoke
   user <subcommand>        create | list            (admin only)
+  mcp                      MCP server over stdio, relaying to the logged-in server
+                           (claude mcp add lore -- lore mcp)
 
 Environment: LORE_URL, LORE_TOKEN override the config file; LORE_SESSION is the default session id.
 Exit codes: the command's own; 100 connection, 101 auth, 102 no such session, 103 timeout, 104 usage.`;
 
-const commands: Record<string, (args: string[]) => Promise<void>> = { login, me, session, exec, token, user };
+const commands: Record<string, (args: string[]) => Promise<void>> = { login, me, session, exec, token, user, mcp };
 
 async function main() {
   const [name, ...args] = process.argv.slice(2);

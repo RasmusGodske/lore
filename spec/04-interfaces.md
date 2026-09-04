@@ -181,6 +181,17 @@ transfers. The description is where the agent learns the workflow.
 Alongside the tools, ship the working instructions — what to write, when, where things go —
 as documented in `05-knowledge-format.md`. Those matter more than the tool surface.
 
+### `lore mcp`: the stdio bridge
+
+Some MCP clients cannot reach a remote HTTP server, or cannot attach a header to it, and every
+client that can still needs the URL and the token pasted into its own configuration. The CLI
+therefore also speaks MCP over stdio: `lore mcp` reads JSON-RPC messages on stdin, sends each
+one to the logged-in server's `/mcp` with the saved token, and writes the replies to stdout,
+unwrapping server-sent events where the server streams. It defines no tools of its own; the
+server remains the single place the tool surface is declared. Registering it is one line with
+nothing secret in it: `claude mcp add lore -- lore mcp`. The HTTP endpoint stays for callers
+without a shell.
+
 ## Errors: two vocabularies
 
 An agent must be able to tell "the command I ran failed" from "the system running my
