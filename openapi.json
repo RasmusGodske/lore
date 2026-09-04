@@ -558,6 +558,21 @@
           "sessions"
         ]
       }
+    },
+    "/guide": {
+      "get": {
+        "operationId": "GuideController_guide",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "How lore works, as markdown. The same text the MCP server hands to clients on initialize",
+        "tags": [
+          "guide"
+        ]
+      }
     }
   },
   "info": {

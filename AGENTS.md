@@ -13,7 +13,7 @@ spec/                 design: overview, architecture, session lifecycle, git mod
 packages/server/      NestJS orchestrator. src/modules/<name>/README.md says what each module hides
 packages/cli/         `lore`, the command-line client for people and agents; no runtime dependencies
 sandbox/Dockerfile    the agent's environment inside a session
-seed/                 initial contents of the knowledge repository (its own AGENTS.md is for agents *writing knowledge*)
+seed/                 initial contents of the knowledge repository: an OKF bundle root (index.md) and nothing else
 openapi.json          the HTTP contract, generated from the server; the CLI's types are generated from it
 docker-compose.yml    local stack; the VM uses the same shape with LORE_SANDBOX_RUNTIME=runsc
 deploy/               VM deployment: cloud-init, create-server.sh (Hetzner API), backup/restore, deploy/README.md
@@ -21,8 +21,10 @@ deploy/               VM deployment: cloud-init, create-server.sh (Hetzner API),
 data/                 runtime state (gitignored): knowledge.git (bare), main/ (read-only checkout), lore.db, sessions/
 ```
 
-Two different AGENTS.md files exist on purpose. This one is for working on the **code**.
-`seed/AGENTS.md` is copied into the knowledge repository and is for agents **writing knowledge**.
+lore does not dictate what a knowledge repository contains. The seed is an empty OKF bundle
+root; a team's writing conventions live in their own repository under whatever name they choose.
+How lore itself works is explained once, in `packages/server/src/modules/guide/guide.ts`, and
+served as the MCP instructions, `GET /guide`, and `lore guide`.
 
 ## Run, test, regenerate
 

@@ -23,12 +23,12 @@ describe("sessions", { skip: stack ? false : skipReason }, () => {
 
   it("creates a session whose workspace is a checkout of main on the session branch", async () => {
     const id = await open(owner, "checkout shape");
-    const r = await owner.exec(id, "git branch --show-current && git remote get-url origin && test -f AGENTS.md && echo agents-ok");
+    const r = await owner.exec(id, "git branch --show-current && git remote get-url origin && test -f index.md && echo index-ok");
     assert.equal(r.status, 200);
     assert.equal(r.json.exit_code, 0);
     assert.match(r.json.stdout, new RegExp(`^session/${id}\\n`));
     assert.match(r.json.stdout, /\/git\/loreg_[0-9a-f]+\/knowledge\.git/);
-    assert.match(r.json.stdout, /agents-ok/);
+    assert.match(r.json.stdout, /index-ok/);
   });
 
   it("runs as an unprivileged user with a read-only root filesystem", async () => {

@@ -181,6 +181,12 @@ transfers. The description is where the agent learns the workflow.
 Alongside the tools, ship the working instructions — what to write, when, where things go —
 as documented in `05-knowledge-format.md`. Those matter more than the tool surface.
 
+### The guide
+
+How lore works is written once, in the server, and served three ways: as the MCP server's
+initialize instructions, at `GET /guide` as markdown, and as `lore guide`. It covers the
+mechanism only. Conventions about content are the knowledge repository's own (spec 05).
+
 ### `lore mcp`: the stdio bridge
 
 Some MCP clients cannot reach a remote HTTP server, or cannot attach a header to it, and every

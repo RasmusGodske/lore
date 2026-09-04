@@ -126,14 +126,10 @@ OKF reserves exactly two filenames: `index.md` (the directory listing used for p
 disclosure) and `log.md` (a chronological history of updates). Index files carry no
 frontmatter, with one exception: the bundle-root `index.md` may declare `okf_version`. Every
 other markdown file must have a frontmatter block with a non-empty `type`. The seed follows
-this: index files are plain markdown, the root one declares the version, and `AGENTS.md`
-carries `title` and `type: Guide` like any other document.
+this: the seed is a single root `index.md` declaring the version.
 
-`AGENTS.md` itself is **not** part of OKF. It is this project's convention, borrowed from the
-general `AGENTS.md` practice for agent instructions, and nothing enforces it: the hook validates
-no content, the server never reads it, and the MCP tool description tells an agent to read
-`index.md` and, if the repository has one, `AGENTS.md`. A team that prefers another name or no
-instructions at all only edits its own repository.
+`AGENTS.md` is **not** part of OKF and not part of lore either. It is a common convention for
+agent instructions; the guide tells an agent to read such a file if the repository keeps one.
 
 ## Progressive disclosure
 
@@ -145,32 +141,23 @@ Keep index files current. Generating them from frontmatter is the obvious automa
 good candidate for a generator script. Remember that index files themselves carry no
 frontmatter.
 
-## AGENTS.md — the part that actually determines whether this works
+## Writing conventions belong to the team, not to lore
 
 Infrastructure is the easy half. Agents rarely decide to document things well unprompted,
 and when they do write, they tend toward article-style summaries rather than the structured,
-per-subject records that are actually useful. This has been observed directly in other
-setups and should be treated as the expected failure mode, not a surprise.
+per-subject records that are actually useful. Instructions that say when to write, where things
+go, what a good document looks like, and what not to write are what makes the difference.
 
-`AGENTS.md` at the repository root carries the working instructions, and needs to be
-specific about:
+Those instructions are deliberately **not** part of lore. They describe a team's knowledge, so
+they live in that team's repository, under whatever name the team chooses; `AGENTS.md` at the
+root is the common convention, and the guide tells an agent to look for such a file before
+writing. lore seeds a new repository with nothing but an OKF bundle root (`index.md` declaring
+`okf_version`), and validates no content, so a team can organise its repository however it
+likes.
 
-- **When to write.** After resolving a recurring question, after discovering something
-  non-obvious about a system, after making a decision worth remembering. Not after every
-  session.
-- **Where things go.** Which directory, which filename convention.
-- **What a good document looks like.** Concrete examples beat description. Include one.
-- **What not to write.** No re-summarising the codebase. No speculation recorded as fact. No
-  duplicating what the production database already answers authoritatively — record the
-  query and its meaning instead.
-- **Updating over appending.** Prefer editing the existing document for a topic over
-  creating a near-duplicate.
-
-Since it sits at the repo root, agents pick it up naturally, and it is versioned alongside
-the knowledge it governs.
-
-**OPEN** — this file's content is not specified here and is the highest-leverage remaining
-piece of work.
+What lore does explain, once and in one place, is its own mechanism: sessions, reading through
+index files, landing changes, conflicts, bulk data, and the audit trail. That text is the
+server's MCP instructions, `GET /guide`, and `lore guide`.
 
 ## Human access
 

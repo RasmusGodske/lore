@@ -28,9 +28,9 @@ claude mcp add --transport http lore https://lore.example.com/mcp --header "Auth
 ```
 
 Tools it gets: `lore_session_create`, `lore_shell` (session_id, command), `lore_session_list`,
-`lore_session_close`. An agent that also has a shell can use `lore` directly, which is the
-path for bulk file transfer. The working instructions agents follow live in the knowledge
-repository itself, at `AGENTS.md`.
+`lore_session_close`, plus the guide to how lore works as the server's instructions. The same
+guide is `lore guide` on the command line and `GET /guide` on the API. What a team writes and
+where is the team's own convention, kept in their knowledge repository; lore does not dictate it.
 
 Everything below is for running or developing the server.
 

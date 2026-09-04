@@ -50,6 +50,7 @@ export class LoreClient {
   }
 
   me() { return this.request<Me>("GET", "/me"); }
+  guide() { return this.request<string>("GET", "/guide", { raw: true }); }
 
   createSession(body: CreateSession) { return this.request<Session>("POST", "/sessions", { json: body }); }
   listSessions(q: { all?: boolean; user?: string } = {}) {

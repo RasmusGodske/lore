@@ -7,8 +7,9 @@ import { AuthModule } from "./modules/auth";
 import { AuditModule } from "./modules/audit";
 import { SessionsModule } from "./modules/sessions";
 import { McpModule } from "./modules/mcp";
+import { GuideModule } from "./modules/guide";
 
 @Module({
-  imports: [ConfigModule, DatabaseModule, AuthModule, AuditModule, ApiModule, ScheduleModule.forRoot(), SessionsModule, McpModule],
+  imports: [ConfigModule, DatabaseModule, AuthModule, AuditModule, ApiModule, ScheduleModule.forRoot(), SessionsModule, McpModule, GuideModule],
 })
 export class AppModule {}
