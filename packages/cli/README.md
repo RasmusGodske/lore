@@ -11,6 +11,7 @@ lore session <cmd>            create | list | show | close | log
 lore exec [ID] -- <cmd...>    run a command in a session; stdin is streamed when piped
 lore token <cmd>              create | list | revoke
 lore user <cmd>               create | list | token          (admin only)
+lore mirror <cmd>           status | sync            (whether main is mirrored to a git host)
 lore mcp                    MCP server over stdio, relaying to the logged-in server
 ```
 

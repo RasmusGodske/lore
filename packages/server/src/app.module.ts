@@ -8,8 +8,9 @@ import { AuditModule } from "./modules/audit";
 import { SessionsModule } from "./modules/sessions";
 import { McpModule } from "./modules/mcp";
 import { GuideModule } from "./modules/guide";
+import { AdminModule } from "./modules/admin";
 
 @Module({
-  imports: [ConfigModule, DatabaseModule, AuthModule, AuditModule, ApiModule, ScheduleModule.forRoot(), SessionsModule, McpModule, GuideModule],
+  imports: [ConfigModule, DatabaseModule, AuthModule, AuditModule, ApiModule, ScheduleModule.forRoot(), SessionsModule, McpModule, GuideModule, AdminModule],
 })
 export class AppModule {}

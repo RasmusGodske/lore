@@ -63,9 +63,9 @@ export class Api {
 export async function freshUser(stack: Stack, opts: { admin?: boolean } = {}): Promise<{ api: Api; name: string; userId: string }> {
   const admin = new Api(stack.url, stack.adminToken);
   const name = `t-${randomBytes(3).toString("hex")}`;
-  const user = await admin.call("POST", "/users", { name, admin: !!opts.admin });
+  const user = await admin.call("POST", "/admin/users", { name, admin: !!opts.admin });
   if (user.status !== 201) throw new Error(`could not create test user: ${user.text}`);
-  const token = await admin.call("POST", `/users/${user.json.id}/tokens`, { label: "test" });
+  const token = await admin.call("POST", `/admin/users/${user.json.id}/tokens`, { label: "test" });
   if (token.status !== 201) throw new Error(`could not mint test token: ${token.text}`);
   return { api: new Api(stack.url, token.json.token), name, userId: user.json.id };
 }

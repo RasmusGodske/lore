@@ -19,6 +19,9 @@ services:
       LORE_SANDBOX_NETWORK: lore-net
       LORE_SERVER_HOST: lore-server
       LORE_LOG_LEVEL: ${LORE_LOG_LEVEL:-info}
+      LORE_MIRROR_URL: ${LORE_MIRROR_URL:-}
+      LORE_MIRROR_TOKEN: ${LORE_MIRROR_TOKEN:-}
+      LORE_MIRROR_USERNAME: ${LORE_MIRROR_USERNAME:-lore}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${LORE_HOST_DATA_DIR:-${PWD}/data}:/srv/lore

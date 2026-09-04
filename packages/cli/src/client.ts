@@ -9,6 +9,9 @@ export type CreatedToken = components["schemas"]["CreatedTokenDto_Output"];
 export type User = components["schemas"]["UserDto_Output"];
 export type Me = components["schemas"]["MeDto_Output"];
 export type AuditEvent = components["schemas"]["AuditEventDto"];
+export type MirrorStatus = components["schemas"]["MirrorStatusDto_Output"];
+export type MirrorAttempt = components["schemas"]["MirrorAttemptDto_Output"];
+export type ServerStatus = components["schemas"]["StatusDto_Output"];
 type CreateSession = components["schemas"]["CreateSessionDto"];
 type ExecBody = components["schemas"]["ExecDto"];
 export type ApiPaths = paths;
@@ -52,6 +55,10 @@ export class LoreClient {
   me() { return this.request<Me>("GET", "/me"); }
   guide() { return this.request<string>("GET", "/guide", { raw: true }); }
   okfSpec() { return this.request<string>("GET", "/guide/okf", { raw: true }); }
+  serverStatus() { return this.request<ServerStatus>("GET", "/admin/status"); }
+  mirrorStatus() { return this.request<MirrorStatus>("GET", "/admin/mirror"); }
+  mirrorLog() { return this.request<MirrorAttempt[]>("GET", "/admin/mirror/log"); }
+  mirrorSync() { return this.request<MirrorStatus>("POST", "/admin/mirror/sync"); }
 
   createSession(body: CreateSession) { return this.request<Session>("POST", "/sessions", { json: body }); }
   listSessions(q: { all?: boolean; user?: string } = {}) {
@@ -76,9 +83,9 @@ export class LoreClient {
   createToken(label: string) { return this.request<CreatedToken>("POST", "/tokens", { json: { label } }); }
   revokeToken(id: string) { return this.request<{ revoked: boolean }>("DELETE", `/tokens/${encodeURIComponent(id)}`); }
 
-  listUsers() { return this.request<User[]>("GET", "/users"); }
-  createUser(name: string, admin: boolean) { return this.request<User>("POST", "/users", { json: { name, admin } }); }
-  mintTokenFor(user: string, label: string) { return this.request<CreatedToken>("POST", `/users/${encodeURIComponent(user)}/tokens`, { json: { label } }); }
+  listUsers() { return this.request<User[]>("GET", "/admin/users"); }
+  createUser(name: string, admin: boolean) { return this.request<User>("POST", "/admin/users", { json: { name, admin } }); }
+  mintTokenFor(user: string, label: string) { return this.request<CreatedToken>("POST", `/admin/users/${encodeURIComponent(user)}/tokens`, { json: { label } }); }
 }
 
 function readableToWeb(r: Readable): ReadableStream<Uint8Array> {

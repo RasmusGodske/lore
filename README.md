@@ -89,10 +89,12 @@ lore session close
 one. Exit codes: a command's own passes through; 100 to 104 with a `lore:` prefix on stderr mean
 the request never ran in the sandbox (connection, auth, unknown session, timeout, bad request).
 
+Managing the server is the `lore admin` namespace, admin-only and nothing an agent uses:
+`lore admin status`, `lore admin mirror status|log|sync`, `lore admin user create|list|token`.
 Admins create users and give them their first token; after that users mint their own:
 
 ```bash
-lore user create alice && lore user token alice laptop
+lore admin user create alice && lore admin user token alice laptop
 ```
 
 ## Tests
@@ -130,6 +132,14 @@ created from `deploy/cloud-init.yml`, running the published images from
 A version tag publishes everything: `git tag v0.1.0 && git push origin v0.1.0` runs the tests,
 pushes both images to the GitHub Container Registry, and publishes `@rasmusgodske/lore` to npm
 with the same version. See `.github/workflows/release.yml`.
+
+## Mirror to a git host
+
+Set `LORE_MIRROR_URL` and `LORE_MIRROR_TOKEN` on the server and `main` is pushed to that
+repository after every landing: a continuously current off-site copy, and GitHub's file
+browser, search and history as a read-only UI. `lore admin mirror status` shows how it is
+going. The step-by-step, including the exact token permissions, is in
+[`deploy/README.md`](deploy/README.md).
 
 ## Browse the knowledge directly
 

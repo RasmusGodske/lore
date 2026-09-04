@@ -4,7 +4,7 @@ import type { Request, Response } from "express";
 import { spawn } from "node:child_process";
 import { Public } from "../api";
 import { ConfigService } from "../config";
-import { GitRepoService, PushLockService } from "../git";
+import { GitRepoService, PushLockService, MirrorService } from "../git";
 import { AuditService } from "../audit";
 import { SessionsService } from "./sessions.service";
 
@@ -24,6 +24,7 @@ export class GitHttpController {
     private readonly config: ConfigService,
     private readonly repo: GitRepoService,
     private readonly lock: PushLockService,
+    private readonly mirror: MirrorService,
     private readonly audit: AuditService,
     private readonly sessions: SessionsService,
   ) {}
@@ -99,7 +100,7 @@ export class GitHttpController {
           this.log.error(`push accepted but main could not be fast-forwarded (session ${session.id}, ${branchAfter})`);
         }
         const mainAfter = await this.repo.refSha("refs/heads/main");
-        if (accepted && mainAfter !== mainBefore) await this.repo.afterLanding();
+        if (accepted && mainAfter !== mainBefore) { await this.repo.afterLanding(); this.mirror.schedule(0); }
         this.audit.record({
           session_id: session.id, op: "push", user_id: session.user_id, token_id: session.token_id, remote_ip: req.ip,
           extra: { branch: session.branch, result: accepted ? "accepted" : "rejected", before: branchBefore, after: branchAfter, main_before: mainBefore, main_after: mainAfter },

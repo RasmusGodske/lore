@@ -37,6 +37,7 @@ jobs:
         with:
           context: .
           file: packages/server/Dockerfile
+          build-args: LORE_VERSION=${{ steps.version.outputs.v }}
           push: true
           tags: |
             ghcr.io/rasmusgodske/lore-server:${{ steps.version.outputs.v }}

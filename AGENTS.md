@@ -32,7 +32,7 @@ regenerates the TypeScript copy the server embeds, and the sandbox image copies 
 
 ```bash
 docker compose up -d --build                     # stack on localhost:8480 (LORE_PUBLIC_PORT to change); /docs has the API
-docker compose exec orchestrator lore-admin user create <name> --admin
+docker compose exec orchestrator lore-admin user create <name> --admin   # first admin only; afterwards: lore admin user ...
 docker compose exec orchestrator lore-admin token create <name> <label>
 npm install && npm run build && npm install -g ./packages/cli
 lore login http://localhost:8480 --token <token>

@@ -47,6 +47,11 @@ export class SessionsRepository {
     return this.db.conn.prepare(sql).all(...params) as unknown as SessionRecord[];
   }
 
+  counts(): { active: number; total: number } {
+    const r = this.db.conn.prepare("SELECT SUM(CASE WHEN state IN ('active','created') THEN 1 ELSE 0 END) AS active, COUNT(*) AS total FROM sessions").get() as { active: number | null; total: number };
+    return { active: r.active ?? 0, total: r.total };
+  }
+
   liveRows(): SessionRow[] {
     return this.db.conn.prepare("SELECT * FROM sessions WHERE state IN ('active','created')").all() as unknown as SessionRow[];
   }

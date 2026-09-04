@@ -37,6 +37,8 @@ export class SessionsService {
 
   touch(id: string): void { this.repo.touch(id); }
 
+  counts(): { active: number; total: number } { return this.repo.counts(); }
+
   get(id: string): SessionDto {
     const s = this.repo.get(id);
     if (!s) throw new TransportError(102, `session '${id}' not found`, 404);

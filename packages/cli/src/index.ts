@@ -8,10 +8,10 @@ import { CliError, HelpRequested } from "./errors.js";
 import { session } from "./commands/session.js";
 import { exec } from "./commands/exec.js";
 import { token } from "./commands/token.js";
-import { user } from "./commands/user.js";
 import { login, me } from "./commands/login.js";
 import { mcp } from "./commands/mcp.js";
 import { guide } from "./commands/guide.js";
+import { admin } from "./commands/admin.js";
 
 const HELP = `usage: lore <command> [args]
 
@@ -21,14 +21,14 @@ const HELP = `usage: lore <command> [args]
   session <subcommand>     create | list | show | close | log
   exec [ID] -- <cmd...>    run a command in a session (streams stdin when piped)
   token <subcommand>       create | list | revoke
-  user <subcommand>        create | list            (admin only)
+  admin <subcommand>       status | mirror | user   (admin only; managing the server)
   mcp                      MCP server over stdio, relaying to the logged-in server
                            (claude mcp add lore -- lore mcp)
 
 Environment: LORE_URL, LORE_TOKEN override the config file; LORE_SESSION is the default session id.
 Exit codes: the command's own; 100 connection, 101 auth, 102 no such session, 103 timeout, 104 usage.`;
 
-const commands: Record<string, (args: string[]) => Promise<void>> = { login, me, guide, session, exec, token, user, mcp };
+const commands: Record<string, (args: string[]) => Promise<void>> = { login, me, guide, session, exec, token, admin, mcp };
 
 // `lore session log | head` closes our stdout early; that is not an error worth a stack trace.
 process.stdout.on("error", (e: NodeJS.ErrnoException) => { if (e.code === "EPIPE") process.exit(0); throw e; });

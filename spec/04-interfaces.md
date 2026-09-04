@@ -166,6 +166,10 @@ Four tools:
 | `lore_shell` | `session_id`, `command`, `cwd?`, `timeout_ms?` |
 | `lore_guide` | `topic?` — `lore` (default) returns the guide, `okf` the full OKF specification |
 
+Everything an operator needs and an agent never does lives under `/admin/*`, admin-only:
+`status`, `mirror`, `mirror/log`, `mirror/sync`, `users`, `users/{id}/tokens`. The CLI exposes
+it as `lore admin ...`. The very first admin is created with `lore-admin` inside the container.
+
 **Sessions are explicit.** An earlier draft folded session creation into first use, one
 session per MCP connection, on the grounds that an agent will forget to call create. It was
 dropped: one connection may drive several sessions, sessions must be attributable, and a

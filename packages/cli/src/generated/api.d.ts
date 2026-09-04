@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/users": {
+    "/admin/users": {
         parameters: {
             query?: never;
             header?: never;
@@ -20,7 +20,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/users/{id}/tokens": {
+    "/admin/users/{id}/tokens": {
         parameters: {
             query?: never;
             header?: never;
@@ -222,6 +222,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Server status: version, uptime, sandbox runtime, session counts, mirror state */
+        get: operations["AdminController_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/mirror": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether main is mirrored to a remote git repository, and how that is going */
+        get: operations["AdminController_mirrorStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/mirror/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The most recent mirror attempts, newest first */
+        get: operations["AdminController_mirrorLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/mirror/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Push main to the mirror now */
+        post: operations["AdminController_mirrorSync"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -310,6 +378,45 @@ export interface components {
             session: string;
             /** @enum {string} */
             op: "create" | "exec" | "push" | "close" | "reap" | "fail";
+        };
+        StatusDto_Output: {
+            version: string;
+            uptime_s: number;
+            sandbox_runtime: string;
+            sessions: {
+                active: number;
+                total: number;
+            };
+            mirror: {
+                configured: boolean;
+                /** @description The mirror remote, credentials removed */
+                url: string | null;
+                last_attempt_at: string | null;
+                last_success_at: string | null;
+                last_error: string | null;
+                consecutive_failures: number;
+                /** @description A push is scheduled or running */
+                pending: boolean;
+            };
+        };
+        MirrorStatusDto_Output: {
+            configured: boolean;
+            /** @description The mirror remote, credentials removed */
+            url: string | null;
+            last_attempt_at: string | null;
+            last_success_at: string | null;
+            last_error: string | null;
+            consecutive_failures: number;
+            /** @description A push is scheduled or running */
+            pending: boolean;
+        };
+        MirrorAttemptDto_Output: {
+            at: string;
+            ok: boolean;
+            duration_ms: number;
+            error: string | null;
+            /** @enum {string} */
+            reason: "landing" | "boot" | "sweep" | "retry" | "manual";
         };
     };
     responses: never;
@@ -688,6 +795,82 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    AdminController_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusDto_Output"];
+                };
+            };
+        };
+    };
+    AdminController_mirrorStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MirrorStatusDto_Output"];
+                };
+            };
+        };
+    };
+    AdminController_mirrorLog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MirrorAttemptDto_Output"][];
+                };
+            };
+        };
+    };
+    AdminController_mirrorSync: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MirrorStatusDto_Output"];
+                };
             };
         };
     };

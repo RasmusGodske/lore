@@ -3,6 +3,8 @@ import path from "node:path";
 import { z } from "zod";
 
 const num = (fallback: number) => z.coerce.number().default(fallback);
+/** Compose passes unset settings through as empty strings; treat those as absent. */
+const blankToUndefined = (v: unknown) => (v === "" ? undefined : v);
 
 export const EnvSchema = z.object({
   LORE_DATA_DIR: z.string().default("/srv/lore"),
@@ -24,6 +26,13 @@ export const EnvSchema = z.object({
   LORE_SEED_DIR: z.string().default("/app/seed"),
   LORE_HOOK_SCRIPT: z.string().default("/app/dist/modules/git/hook.js"),
   LORE_DOCKER_SOCKET: z.string().default("/var/run/docker.sock"),
+  /** Baked into the image at build time by the release workflow; "dev" for local builds. */
+  LORE_VERSION: z.string().default("dev"),
+  /** Mirror: push main to a remote git repository after every landing. Unset = off. */
+  LORE_MIRROR_URL: z.preprocess(blankToUndefined, z.string().url().optional()),
+  LORE_MIRROR_TOKEN: z.preprocess(blankToUndefined, z.string().optional()),
+  LORE_MIRROR_USERNAME: z.string().default("lore"),
+  LORE_MIRROR_INTERVAL_MINUTES: num(15),
 });
 export type Env = z.infer<typeof EnvSchema>;
 

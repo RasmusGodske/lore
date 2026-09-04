@@ -10,6 +10,8 @@ COPY packages/server/src packages/server/src
 RUN npm run build --workspace=@lore/server && npm prune --omit=dev --workspace=@lore/server
 
 FROM node:22-bookworm-slim
+ARG LORE_VERSION=dev
+ENV LORE_VERSION=$LORE_VERSION
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV NODE_ENV=production NODE_OPTIONS=--disable-warning=ExperimentalWarning

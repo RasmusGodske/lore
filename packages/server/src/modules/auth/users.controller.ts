@@ -12,7 +12,7 @@ export const toUserDto = (u: UserRow): UserDto => ({ id: u.id, name: u.name, adm
 @ApiTags("users")
 @ApiBearerAuth()
 @UseGuards(AdminGuard)
-@Controller("users")
+@Controller("admin/users")
 export class UsersController {
   constructor(private readonly users: UsersService, private readonly tokens: TokensService) {}
 

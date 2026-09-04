@@ -44,10 +44,11 @@ describe("auth", { skip: stack ? false : skipReason }, () => {
   });
 
   it("refuses non-admins the user routes with 403 and code 101", async () => {
-    const r = await user.call("POST", "/users", { name: "sneaky" });
+    const r = await user.call("POST", "/admin/users", { name: "sneaky" });
     assert.equal(r.status, 403);
     assert.equal(r.json.error.code, 101);
-    assert.equal((await user.call("GET", "/users")).status, 403);
+    assert.equal((await user.call("GET", "/admin/users")).status, 403);
+    assert.equal((await user.call("GET", "/admin/status")).status, 403);
   });
 
   it("a user cannot revoke someone else's token, an admin can", async () => {
@@ -58,7 +59,7 @@ describe("auth", { skip: stack ? false : skipReason }, () => {
   });
 
   it("validates bodies with a 400 and code 104 that names the field", async () => {
-    const r = await admin.call("POST", "/users", { name: "Not Valid Name" });
+    const r = await admin.call("POST", "/admin/users", { name: "Not Valid Name" });
     assert.equal(r.status, 400);
     assert.equal(r.json.error.code, 104);
     assert.match(r.json.error.message, /name/);

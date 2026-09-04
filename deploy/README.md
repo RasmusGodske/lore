@@ -75,11 +75,76 @@ lore login https://lore.example.com --token <token>
 claude mcp add --transport http lore https://lore.example.com/mcp --header "Authorization: Bearer <token>"
 ```
 
-## 5. Backups
+## 5. Mirror the knowledge to GitHub
 
-`deploy/backup.sh` takes a consistent copy of the database and the knowledge repository,
-keeps a rotation locally, and optionally copies it off the machine and mirrors the
-repository to a git remote. Enable the nightly timer:
+lore can push `main` to a GitHub repository after every landing, on boot, and every few
+minutes as a sweep. That gives you two things: a continuously current off-site copy of the
+knowledge, and GitHub's file browser, search, history and blame as a read-only way to look at
+what the team has written. It is one-way: edits made on GitHub are not pulled back, writes go
+through sessions.
+
+### 5.1 Create the repository
+
+On GitHub, create a new repository, for example `your-org/knowledge`. Private or public is
+your choice; it only decides who can read the mirror. Leave it empty: no README, no licence,
+no `.gitignore`. lore pushes the first commit.
+
+### 5.2 Create a token that may write to that one repository
+
+Use a fine-grained personal access token, so the credential cannot touch anything else you own.
+
+1. GitHub, top-right avatar, **Settings**.
+2. Left sidebar, bottom: **Developer settings**.
+3. **Personal access tokens**, then **Fine-grained tokens**, then **Generate new token**.
+4. Token name: `lore mirror`. Expiration: your policy; a year is reasonable, and the server's
+   status page tells you when pushes start failing.
+5. **Resource owner**: your account, or the organisation that owns the repository.
+6. **Repository access**: *Only select repositories*, and pick the mirror repository.
+7. **Permissions**, under *Repository permissions*: set **Contents** to *Read and write*.
+   That is the only permission needed. Leave everything else at *No access*; **Metadata** is
+   added automatically as read-only.
+8. Generate, and copy the token. It starts with `github_pat_` and is shown once.
+
+For an organisation-owned repository, an organisation admin may need to approve fine-grained
+tokens under the organisation's settings, *Personal access tokens*.
+
+### 5.3 Configure the server
+
+Add two lines to the server's `.env` (at `/srv/lore/.env` on the VM), then restart:
+
+```
+LORE_MIRROR_URL=https://github.com/your-org/knowledge.git
+LORE_MIRROR_TOKEN=github_pat_...
+```
+
+```bash
+cd /srv/lore && docker compose up -d
+```
+
+The token is handed to git through a credential helper at push time; it never appears in a
+URL, a log line, the database, a backup, or the API.
+
+### 5.4 Check it
+
+```bash
+lore admin status          # includes the mirror line
+lore admin mirror status   # remote, last success, last error
+lore admin mirror log      # recent attempts, newest first
+lore admin mirror sync     # push now
+```
+
+Then open the repository on GitHub: `main` should show the knowledge base's files. If a push
+fails, the server retries with backoff (one minute, two, four, up to fifteen) and the sweep
+tries again every fifteen minutes; `lore admin mirror status` shows the last error verbatim.
+
+Other git hosts that accept a push over HTTPS with a token work the same way; only the token
+creation differs. Set `LORE_MIRROR_USERNAME` if the host requires a specific username.
+
+## 6. Backups
+
+The mirror above covers the knowledge itself. The database (users, tokens, audit) still needs
+an archive: `deploy/backup.sh` takes a consistent copy of the database and the knowledge
+repository, keeps a rotation locally, and optionally copies it off the machine. Enable the nightly timer:
 
 ```bash
 sudo cp deploy/lore-backup.service deploy/lore-backup.timer /etc/systemd/system/
@@ -92,7 +157,7 @@ destination such as a Hetzner Storage Box (`u123456@u123456.your-storagebox.de:l
 after adding the server's `deploy` key to the box), and `LORE_MIRROR_REMOTE` to a private git
 repository the server can push to with a deploy key. Restore with `deploy/restore.sh <archive>`.
 
-## 6. Updating
+## 7. Updating
 
 Set `LORE_VERSION` in `.env` to the new release, then:
 

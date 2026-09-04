@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "paths": {
-    "/users": {
+    "/admin/users": {
       "get": {
         "operationId": "UsersController_list",
         "parameters": [],
@@ -64,7 +64,7 @@
         ]
       }
     },
-    "/users/{id}/tokens": {
+    "/admin/users/{id}/tokens": {
       "post": {
         "operationId": "UsersController_mintToken",
         "parameters": [
@@ -588,6 +588,117 @@
           "guide"
         ]
       }
+    },
+    "/admin/status": {
+      "get": {
+        "operationId": "AdminController_status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Server status: version, uptime, sandbox runtime, session counts, mirror state",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/mirror": {
+      "get": {
+        "operationId": "AdminController_mirrorStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MirrorStatusDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Whether main is mirrored to a remote git repository, and how that is going",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/mirror/log": {
+      "get": {
+        "operationId": "AdminController_mirrorLog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MirrorAttemptDto_Output"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The most recent mirror attempts, newest first",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/mirror/sync": {
+      "post": {
+        "operationId": "AdminController_mirrorSync",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MirrorStatusDto_Output"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Push main to the mirror now",
+        "tags": [
+          "admin"
+        ]
+      }
     }
   },
   "info": {
@@ -931,6 +1042,184 @@
           "session",
           "op"
         ]
+      },
+      "StatusDto_Output": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "uptime_s": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "sandbox_runtime": {
+            "type": "string"
+          },
+          "sessions": {
+            "type": "object",
+            "properties": {
+              "active": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "total": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "active",
+              "total"
+            ],
+            "additionalProperties": false
+          },
+          "mirror": {
+            "type": "object",
+            "properties": {
+              "configured": {
+                "type": "boolean"
+              },
+              "url": {
+                "description": "The mirror remote, credentials removed",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "last_attempt_at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "last_success_at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "last_error": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "consecutive_failures": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "pending": {
+                "type": "boolean",
+                "description": "A push is scheduled or running"
+              }
+            },
+            "required": [
+              "configured",
+              "url",
+              "last_attempt_at",
+              "last_success_at",
+              "last_error",
+              "consecutive_failures",
+              "pending"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "version",
+          "uptime_s",
+          "sandbox_runtime",
+          "sessions",
+          "mirror"
+        ],
+        "additionalProperties": false
+      },
+      "MirrorStatusDto_Output": {
+        "type": "object",
+        "properties": {
+          "configured": {
+            "type": "boolean"
+          },
+          "url": {
+            "type": "string",
+            "description": "The mirror remote, credentials removed",
+            "nullable": true
+          },
+          "last_attempt_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "last_success_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "last_error": {
+            "type": "string",
+            "nullable": true
+          },
+          "consecutive_failures": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "pending": {
+            "type": "boolean",
+            "description": "A push is scheduled or running"
+          }
+        },
+        "required": [
+          "configured",
+          "url",
+          "last_attempt_at",
+          "last_success_at",
+          "last_error",
+          "consecutive_failures",
+          "pending"
+        ],
+        "additionalProperties": false
+      },
+      "MirrorAttemptDto_Output": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "landing",
+              "boot",
+              "sweep",
+              "retry",
+              "manual"
+            ]
+          }
+        },
+        "required": [
+          "at",
+          "ok",
+          "duration_ms",
+          "error",
+          "reason"
+        ],
+        "additionalProperties": false
       }
     }
   }

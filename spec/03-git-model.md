@@ -211,12 +211,18 @@ If read isolation is ever wanted, the mechanism is not hooks. It is to stop givi
 a general git remote and have the orchestrator seed each workspace with only the current
 state of `main`.
 
-## Optional GitHub mirror
+## Mirror
 
-Entirely separate from the agent workflow, purely for backup and browsing:
+The server can push `main` to a remote git repository: after every landing, once at boot, and
+on a periodic sweep, with exponential backoff when the remote is unreachable. It is configured
+with two settings, `LORE_MIRROR_URL` and `LORE_MIRROR_TOKEN` (plus a username for hosts that
+need one), because the target and its credential are deployment configuration, not product
+data: the credential never enters the database, a backup, or the API. Every git host accepts
+the same operation, a push over HTTPS with basic auth; only how a write-scoped token is
+obtained differs per host, which the deployment guide covers.
 
-```bash
-git --git-dir=/srv/lore/knowledge.git push --mirror github
-```
-
-Run from a cron job or the orchestrator. Nothing in the system depends on it existing.
+The mirror is strictly one-way. Writes go through sessions so the audit trail stays complete;
+edits made on the host are not pulled back. Its purpose is an off-site copy that is current
+within seconds, and a read-only browser (file view, search, history) that postpones building
+a web UI for reading. `GET /mirror` reports the state; `POST /mirror/sync` (admin) forces a
+push. Nothing in the system depends on the mirror existing.
