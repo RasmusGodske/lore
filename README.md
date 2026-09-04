@@ -36,6 +36,24 @@ everywhere: `lore_guide` with topic `okf`, `/usr/share/lore/OKF-SPEC.md` inside 
 validated: a team reads once, writes its own conventions into its repository, and agents
 follow those. Lore does not dictate what a repository contains.
 
+### Connect claude.ai
+
+claude.ai reaches the server from Anthropic's side rather than from your machine, so this needs
+a server on a public HTTPS address. In **Settings → Connectors → Add → Add custom connector**,
+give it a name and the URL `https://lore.example.com/mcp`, click **Next**, choose **no
+authentication**, and then add a custom header:
+
+```
+Authorization: Bearer <token>
+```
+
+The "no authentication" choice refers to OAuth, which lore does not implement; the header is
+what authenticates, and the connector dialog only offers the header field once OAuth is
+declined. Mint a token for this alone, `lore token create claude-ai` (or, as an admin for
+another user, `lore admin user token alice claude-ai`), so it can be revoked on its own: it
+lives in Anthropic's connector configuration rather than on a machine you control, and every
+session it opens is attributed to its user in the audit log.
+
 Everything below is for running or developing the server.
 
 ```
