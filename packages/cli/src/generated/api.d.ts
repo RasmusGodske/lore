@@ -229,7 +229,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Server status: version, uptime, sandbox runtime, session counts, mirror state */
+        /** Server status: version, uptime, sandbox runtime, session counts, remote state */
         get: operations["AdminController_status"];
         put?: never;
         post?: never;
@@ -239,15 +239,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/mirror": {
+    "/admin/remote": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Whether main is mirrored to a remote git repository, and how that is going */
-        get: operations["AdminController_mirrorStatus"];
+        /** Whether a remote repository is the source of truth, and how following it is going */
+        get: operations["AdminController_remoteStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -256,15 +256,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/mirror/log": {
+    "/admin/remote/log": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** The most recent mirror attempts, newest first */
-        get: operations["AdminController_mirrorLog"];
+        /** The most recent remote fetches and landings, newest first */
+        get: operations["AdminController_remoteLog"];
         put?: never;
         post?: never;
         delete?: never;
@@ -273,7 +273,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/mirror/sync": {
+    "/admin/remote/sync": {
         parameters: {
             query?: never;
             header?: never;
@@ -282,8 +282,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Push main to the mirror now */
-        post: operations["AdminController_mirrorSync"];
+        /** Fetch the remote now and bring local main in step with it */
+        post: operations["AdminController_remoteSync"];
         delete?: never;
         options?: never;
         head?: never;
@@ -387,7 +387,7 @@ export interface components {
                 active: number;
                 total: number;
             };
-            mirror: {
+            remote: {
                 configured: boolean;
                 /** @description The mirror remote, credentials removed */
                 url: string | null;
@@ -395,11 +395,11 @@ export interface components {
                 last_success_at: string | null;
                 last_error: string | null;
                 consecutive_failures: number;
-                /** @description A push is scheduled or running */
-                pending: boolean;
+                /** @description Local main and remote main moved independently; an operator must reconcile */
+                diverged: boolean;
             };
         };
-        MirrorStatusDto_Output: {
+        RemoteStatusDto_Output: {
             configured: boolean;
             /** @description The mirror remote, credentials removed */
             url: string | null;
@@ -407,16 +407,17 @@ export interface components {
             last_success_at: string | null;
             last_error: string | null;
             consecutive_failures: number;
-            /** @description A push is scheduled or running */
-            pending: boolean;
+            /** @description Local main and remote main moved independently; an operator must reconcile */
+            diverged: boolean;
         };
-        MirrorAttemptDto_Output: {
+        RemoteAttemptDto_Output: {
             at: string;
             ok: boolean;
             duration_ms: number;
+            outcome: string;
             error: string | null;
             /** @enum {string} */
-            reason: "landing" | "boot" | "sweep" | "retry" | "manual";
+            reason: "boot" | "session" | "fetch" | "sweep" | "manual" | "landing";
         };
     };
     responses: never;
@@ -817,7 +818,7 @@ export interface operations {
             };
         };
     };
-    AdminController_mirrorStatus: {
+    AdminController_remoteStatus: {
         parameters: {
             query?: never;
             header?: never;
@@ -831,12 +832,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MirrorStatusDto_Output"];
+                    "application/json": components["schemas"]["RemoteStatusDto_Output"];
                 };
             };
         };
     };
-    AdminController_mirrorLog: {
+    AdminController_remoteLog: {
         parameters: {
             query?: never;
             header?: never;
@@ -850,12 +851,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MirrorAttemptDto_Output"][];
+                    "application/json": components["schemas"]["RemoteAttemptDto_Output"][];
                 };
             };
         };
     };
-    AdminController_mirrorSync: {
+    AdminController_remoteSync: {
         parameters: {
             query?: never;
             header?: never;
@@ -869,7 +870,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MirrorStatusDto_Output"];
+                    "application/json": components["schemas"]["RemoteStatusDto_Output"];
                 };
             };
         };

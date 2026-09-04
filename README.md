@@ -133,13 +133,15 @@ A version tag publishes everything: `git tag v0.1.0 && git push origin v0.1.0` r
 pushes both images to the GitHub Container Registry, and publishes `@rasmusgodske/lore` to npm
 with the same version. See `.github/workflows/release.yml`.
 
-## Mirror to a git host
+## Use a GitHub repository as the source of truth
 
-Set `LORE_MIRROR_URL` and `LORE_MIRROR_TOKEN` on the server and `main` is pushed to that
-repository after every landing: a continuously current off-site copy, and GitHub's file
-browser, search and history as a read-only UI. `lore admin mirror status` shows how it is
-going. The step-by-step, including the exact token permissions, is in
-[`deploy/README.md`](deploy/README.md).
+Standalone, lore's own repository is the knowledge base. Set `LORE_REMOTE_URL` and
+`LORE_REMOTE_TOKEN` and a git repository, for example on GitHub, becomes the source of truth
+instead: every session starts from its `main`, every landing is a push to it, and a change
+made on GitHub is what the next session sees. That is an off-site copy that is current within
+seconds, and GitHub's file browser and history as the way to look at the knowledge.
+`lore admin remote status` shows how it is going. The step-by-step, including the exact token
+permissions, is in [`deploy/README.md`](deploy/README.md).
 
 ## Browse the knowledge directly
 

@@ -4,7 +4,7 @@ import type { Request, Response } from "express";
 import { spawn } from "node:child_process";
 import { Public } from "../api";
 import { ConfigService } from "../config";
-import { GitRepoService, PushLockService, MirrorService } from "../git";
+import { GitRepoService, PushLockService, RemoteService } from "../git";
 import { AuditService } from "../audit";
 import { SessionsService } from "./sessions.service";
 
@@ -24,7 +24,7 @@ export class GitHttpController {
     private readonly config: ConfigService,
     private readonly repo: GitRepoService,
     private readonly lock: PushLockService,
-    private readonly mirror: MirrorService,
+    private readonly remote: RemoteService,
     private readonly audit: AuditService,
     private readonly sessions: SessionsService,
   ) {}
@@ -44,6 +44,9 @@ export class GitHttpController {
     }
     const url = new URL(req.originalUrl, "http://x");
     const isPush = req.method === "POST" && subpath.endsWith("git-receive-pack");
+    const isFetch = subpath.endsWith("git-upload-pack") || url.searchParams.get("service") === "git-upload-pack";
+    // A sandbox's `git fetch origin` must see the truth: refresh from the remote first.
+    if (isFetch && !isPush) await this.remote.refresh("fetch");
     const branchBefore = isPush ? await this.repo.refSha(session.branch) : null;
     const mainBefore = isPush ? await this.repo.refSha("refs/heads/main") : null;
 
@@ -60,7 +63,10 @@ export class GitHttpController {
       CONTENT_LENGTH: req.headers["content-length"] ?? "",
       HTTP_CONTENT_ENCODING: (req.headers["content-encoding"] as string) ?? "",
       GIT_HTTP_MAX_REQUEST_BUFFER: "100M",
+      // The hook lands on the remote itself when one is configured.
+      ...(this.config.remote ? { LORE_REMOTE_URL: this.config.remote.url, LORE_REMOTE_USERNAME: this.config.remote.username, LORE_REMOTE_TOKEN: this.config.remote.token } : {}),
     };
+    const started = Date.now();
 
     let finished!: () => void;
     const settled = new Promise<void>((r) => { finished = r; });
@@ -100,7 +106,8 @@ export class GitHttpController {
           this.log.error(`push accepted but main could not be fast-forwarded (session ${session.id}, ${branchAfter})`);
         }
         const mainAfter = await this.repo.refSha("refs/heads/main");
-        if (accepted && mainAfter !== mainBefore) { await this.repo.afterLanding(); this.mirror.schedule(0); }
+        if (accepted && mainAfter !== mainBefore) await this.repo.afterLanding();
+        if (this.remote.configured) this.remote.recordLanding(accepted, accepted ? null : "rejected by the hook", Date.now() - started);
         this.audit.record({
           session_id: session.id, op: "push", user_id: session.user_id, token_id: session.token_id, remote_ip: req.ip,
           extra: { branch: session.branch, result: accepted ? "accepted" : "rejected", before: branchBefore, after: branchAfter, main_before: mainBefore, main_after: mainAfter },

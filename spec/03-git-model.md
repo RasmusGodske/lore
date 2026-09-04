@@ -211,18 +211,32 @@ If read isolation is ever wanted, the mechanism is not hooks. It is to stop givi
 a general git remote and have the orchestrator seed each workspace with only the current
 state of `main`.
 
-## Mirror
+## Remote as the source of truth
 
-The server can push `main` to a remote git repository: after every landing, once at boot, and
-on a periodic sweep, with exponential backoff when the remote is unreachable. It is configured
-with two settings, `LORE_MIRROR_URL` and `LORE_MIRROR_TOKEN` (plus a username for hosts that
-need one), because the target and its credential are deployment configuration, not product
-data: the credential never enters the database, a backup, or the API. Every git host accepts
-the same operation, a push over HTTPS with basic auth; only how a write-scoped token is
-obtained differs per host, which the deployment guide covers.
+lore runs standalone, its own bare repository being the knowledge base, or with a remote:
+a git repository elsewhere, typically on GitHub, configured with `LORE_REMOTE_URL` and
+`LORE_REMOTE_TOKEN`. With a remote, that repository is the truth and lore's is a copy kept
+current:
 
-The mirror is strictly one-way. Writes go through sessions so the audit trail stays complete;
-edits made on the host are not pulled back. Its purpose is an off-site copy that is current
-within seconds, and a read-only browser (file view, search, history) that postpones building
-a web UI for reading. `GET /mirror` reports the state; `POST /mirror/sync` (admin) forces a
-push. Nothing in the system depends on the mirror existing.
+- Before a session is created, when a sandbox fetches, at boot, on a periodic sweep, and on an
+  admin's request, lore fetches the remote's `main` and fast-forwards its own to it. If the
+  remote is empty, lore pushes its `main` there instead, so an empty repository becomes a
+  bundle root.
+- Landing happens on the remote. In pre-receive, under the push lock, the hook fetches the
+  remote's `main`, fast-forwards local `main` to it, checks the rules against that, and pushes
+  the session's commit to the remote. Only if the remote accepts does the hook accept; then
+  post-receive fast-forwards local `main` as usual. "Landed" means "on the remote".
+  Git quarantines incoming objects during pre-receive, but they can be pushed onward as long as
+  the quarantine marker is not passed to the receiving side.
+- A change made on the host directly is simply another writer. The next session starts from
+  it; a session already in progress has its push refused, merges it, and pushes again, exactly
+  as with a concurrent session. Such changes are not in lore's audit log; they are in git
+  history under their author.
+- lore never forces. If both sides have moved independently, which in practice only happens
+  when a standalone server is pointed at a repository with unrelated history, the state is
+  reported as diverged and an operator reconciles it.
+
+The credential is deployment configuration, handed to git through a credential helper; it
+never enters the database, a backup, a URL, a log, or the API. `GET /admin/remote` reports the
+state, `GET /admin/remote/log` the recent fetches and landings, and `POST /admin/remote/sync`
+fetches now. Nothing in the system depends on a remote existing.

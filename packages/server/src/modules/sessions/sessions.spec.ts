@@ -68,7 +68,7 @@ describe("sessions", { skip: stack ? false : skipReason }, () => {
     const r = await owner.exec(id, `mkdir -p topics/t-${id} && echo "---\ntitle: T\ntype: Topic\n---" > topics/t-${id}/index.md && git add -A && git commit -qm "test ${id}" && git push origin HEAD 2>&1`);
     assert.equal(r.json.exit_code, 0, r.json.stdout + r.json.stderr);
     assert.match(r.json.stdout, /lore: accepted refs\/heads\/session\//);
-    assert.match(r.json.stdout, /lore: landed; main is now/);
+    assert.match(r.json.stdout, /lore: landed( on the remote)?; main is now/);
     const log = await owner.call("GET", `/sessions/${id}/log?format=json`);
     const push = log.json.find((e: any) => e.op === "push");
     assert.equal(push.result, "accepted");

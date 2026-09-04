@@ -21,7 +21,7 @@ const HELP = `usage: lore <command> [args]
   session <subcommand>     create | list | show | close | log
   exec [ID] -- <cmd...>    run a command in a session (streams stdin when piped)
   token <subcommand>       create | list | revoke
-  admin <subcommand>       status | mirror | user   (admin only; managing the server)
+  admin <subcommand>       status | remote | user   (admin only; managing the server)
   mcp                      MCP server over stdio, relaying to the logged-in server
                            (claude mcp add lore -- lore mcp)
 

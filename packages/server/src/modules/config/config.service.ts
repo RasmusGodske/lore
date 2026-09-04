@@ -28,11 +28,15 @@ export const EnvSchema = z.object({
   LORE_DOCKER_SOCKET: z.string().default("/var/run/docker.sock"),
   /** Baked into the image at build time by the release workflow; "dev" for local builds. */
   LORE_VERSION: z.string().default("dev"),
-  /** Mirror: push main to a remote git repository after every landing. Unset = off. */
-  LORE_MIRROR_URL: z.preprocess(blankToUndefined, z.string().url().optional()),
-  LORE_MIRROR_TOKEN: z.preprocess(blankToUndefined, z.string().optional()),
-  LORE_MIRROR_USERNAME: z.string().default("lore"),
-  LORE_MIRROR_INTERVAL_MINUTES: num(15),
+  /**
+   * Remote: when set, that git repository (e.g. on GitHub) is the source of truth. lore keeps a
+   * local copy current, sessions start from the remote's main, and a landing is a push to it.
+   * Unset = standalone, lore's own repository is the truth.
+   */
+  LORE_REMOTE_URL: z.preprocess(blankToUndefined, z.string().url().optional()),
+  LORE_REMOTE_TOKEN: z.preprocess(blankToUndefined, z.string().optional()),
+  LORE_REMOTE_USERNAME: z.string().default("lore"),
+  LORE_REMOTE_REFRESH_MINUTES: num(5),
 });
 export type Env = z.infer<typeof EnvSchema>;
 
@@ -52,5 +56,9 @@ export class ConfigService {
   hostWorkspacePath(id: string) { return path.join(this.hostDataDir, "sessions", id); }
   get idleTimeoutMs() { return this.env.LORE_IDLE_TIMEOUT_HOURS * 3_600_000; }
   get reaperIntervalMs() { return this.env.LORE_REAPER_INTERVAL_MINUTES * 60_000; }
+  get remote(): { url: string; username: string; token: string } | null {
+    const url = this.env.LORE_REMOTE_URL;
+    return url ? { url, username: this.env.LORE_REMOTE_USERNAME, token: this.env.LORE_REMOTE_TOKEN ?? "" } : null;
+  }
   gitRemoteUrl(gitToken: string) { return `http://${this.env.LORE_SERVER_HOST}:${this.env.LORE_PORT}/git/${gitToken}/knowledge.git`; }
 }

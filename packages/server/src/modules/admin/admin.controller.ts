@@ -2,10 +2,10 @@ import { Controller, Get, Post, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { ZodResponse } from "nestjs-zod";
 import { AdminGuard } from "../auth";
-import { MirrorService } from "../git";
+import { RemoteService } from "../git";
 import { SessionsService } from "../sessions";
 import { ConfigService } from "../config";
-import { MirrorAttemptDto, MirrorStatusDto, StatusDto } from "./dto";
+import { RemoteAttemptDto, RemoteStatusDto, StatusDto } from "./dto";
 
 /** Everything an operator looks at and an agent never needs. All routes are admin-only. */
 @ApiTags("admin")
@@ -15,10 +15,10 @@ import { MirrorAttemptDto, MirrorStatusDto, StatusDto } from "./dto";
 export class AdminController {
   private readonly startedAt = Date.now();
 
-  constructor(private readonly mirror: MirrorService, private readonly sessions: SessionsService, private readonly config: ConfigService) {}
+  constructor(private readonly remote: RemoteService, private readonly sessions: SessionsService, private readonly config: ConfigService) {}
 
   @Get("status")
-  @ApiOperation({ summary: "Server status: version, uptime, sandbox runtime, session counts, mirror state" })
+  @ApiOperation({ summary: "Server status: version, uptime, sandbox runtime, session counts, remote state" })
   @ZodResponse({ status: 200, type: StatusDto })
   status(): StatusDto {
     return {
@@ -26,22 +26,22 @@ export class AdminController {
       uptime_s: Math.round((Date.now() - this.startedAt) / 1000),
       sandbox_runtime: this.config.env.LORE_SANDBOX_RUNTIME,
       sessions: this.sessions.counts(),
-      mirror: this.mirror.getStatus(),
+      remote: this.remote.getStatus(),
     };
   }
 
-  @Get("mirror")
-  @ApiOperation({ summary: "Whether main is mirrored to a remote git repository, and how that is going" })
-  @ZodResponse({ status: 200, type: MirrorStatusDto })
-  mirrorStatus() { return this.mirror.getStatus(); }
+  @Get("remote")
+  @ApiOperation({ summary: "Whether a remote repository is the source of truth, and how following it is going" })
+  @ZodResponse({ status: 200, type: RemoteStatusDto })
+  remoteStatus() { return this.remote.getStatus(); }
 
-  @Get("mirror/log")
-  @ApiOperation({ summary: "The most recent mirror attempts, newest first" })
-  @ZodResponse({ status: 200, type: [MirrorAttemptDto] })
-  mirrorLog() { return this.mirror.getLog(); }
+  @Get("remote/log")
+  @ApiOperation({ summary: "The most recent remote fetches and landings, newest first" })
+  @ZodResponse({ status: 200, type: [RemoteAttemptDto] })
+  remoteLog() { return this.remote.getLog(); }
 
-  @Post("mirror/sync")
-  @ApiOperation({ summary: "Push main to the mirror now" })
-  @ZodResponse({ status: 200, type: MirrorStatusDto })
-  mirrorSync() { return this.mirror.syncNow(); }
+  @Post("remote/sync")
+  @ApiOperation({ summary: "Fetch the remote now and bring local main in step with it" })
+  @ZodResponse({ status: 200, type: RemoteStatusDto })
+  async remoteSync() { await this.remote.refresh("manual"); return this.remote.getStatus(); }
 }

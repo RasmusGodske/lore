@@ -2,7 +2,7 @@ import { makeContext } from "../context.js";
 import { parse } from "../args.js";
 import { printJson, printTable, wantsJson } from "../output.js";
 import { usage, HelpRequested, wantsHelp } from "../errors.js";
-import type { MirrorStatus } from "../client.js";
+import type { RemoteStatus } from "../client.js";
 
 /**
  * `lore admin ...`: managing the server. Everything here needs the admin flag and is nothing an
@@ -10,26 +10,26 @@ import type { MirrorStatus } from "../client.js";
  */
 const HELP = `usage: lore admin <command>          (admin only)
 
-  status                     version, uptime, sandbox runtime, session counts, mirror state
-  mirror status              whether main is mirrored to a git host, and how that is going
-  mirror log                 recent mirror attempts, newest first
-  mirror sync                push main to the mirror now
+  status                     version, uptime, sandbox runtime, session counts, remote state
+  remote status              whether a remote repository is the source of truth, and how following it goes
+  remote log                 recent fetches and landings, newest first
+  remote sync                fetch the remote now and bring local main in step with it
   user create <name> [--admin]
   user list
   user token <user> <label>  mint a user's first token; afterwards they mint their own
 
-The mirror itself is configured on the server (LORE_MIRROR_URL, LORE_MIRROR_TOKEN); see the deploy guide.`;
+The remote is configured on the server (LORE_REMOTE_URL, LORE_REMOTE_TOKEN); see the deploy guide.`;
 
-function showMirror(m: MirrorStatus, json: boolean) {
+function showRemote(m: RemoteStatus, json: boolean) {
   if (json) { printJson(m); return; }
-  if (!m.configured) { process.stdout.write("mirror: not configured\n"); return; }
+  if (!m.configured) { process.stdout.write("remote: not configured; this server is the source of truth\n"); return; }
   printTable([
     ["remote", m.url ?? ""],
     ["last success", m.last_success_at ?? "never"],
     ["last attempt", m.last_attempt_at ?? "never"],
     ["last error", m.last_error ?? ""],
     ["failures in a row", String(m.consecutive_failures)],
-    ["push pending", m.pending ? "yes" : "no"],
+    ["diverged", m.diverged ? "YES: an operator must reconcile" : "no"],
   ]);
 }
 
@@ -47,19 +47,19 @@ export async function admin(args: string[]) {
       ["uptime", `${Math.floor(s.uptime_s / 3600)}h ${Math.floor((s.uptime_s % 3600) / 60)}m`],
       ["sandbox runtime", s.sandbox_runtime],
       ["sessions", `${s.sessions.active} active, ${s.sessions.total} total`],
-      ["mirror", s.mirror.configured ? `${s.mirror.url}  (${s.mirror.last_error ? "FAILING: " + s.mirror.last_error : "last success " + (s.mirror.last_success_at ?? "never")})` : "not configured"],
+      ["remote", s.remote.configured ? `${s.remote.url}  (${s.remote.last_error ? "FAILING: " + s.remote.last_error : "last success " + (s.remote.last_success_at ?? "never")})` : "none; this server is the source of truth"],
     ]);
     return;
   }
 
-  if (group === "mirror") {
+  if (group === "remote") {
     const { values } = parse(rest, { json: { type: "boolean" } });
-    if (sub === "status") return showMirror(await client.mirrorStatus(), wantsJson(values.json));
-    if (sub === "sync") return showMirror(await client.mirrorSync(), wantsJson(values.json));
+    if (sub === "status") return showRemote(await client.remoteStatus(), wantsJson(values.json));
+    if (sub === "sync") return showRemote(await client.remoteSync(), wantsJson(values.json));
     if (sub === "log") {
-      const log = await client.mirrorLog();
+      const log = await client.remoteLog();
       if (wantsJson(values.json)) { printJson(log); return; }
-      printTable(log.map((a) => [a.at, a.ok ? "ok" : "FAILED", a.reason, `${a.duration_ms}ms`, a.error ?? ""]), ["AT", "RESULT", "REASON", "TOOK", "ERROR"]);
+      printTable(log.map((a) => [a.at, a.ok ? "ok" : "FAILED", a.reason, `${a.duration_ms}ms`, a.outcome, a.error ?? ""]), ["AT", "RESULT", "REASON", "TOOK", "OUTCOME", "ERROR"]);
       return;
     }
     throw usage(HELP);

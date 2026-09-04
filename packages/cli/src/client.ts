@@ -9,8 +9,8 @@ export type CreatedToken = components["schemas"]["CreatedTokenDto_Output"];
 export type User = components["schemas"]["UserDto_Output"];
 export type Me = components["schemas"]["MeDto_Output"];
 export type AuditEvent = components["schemas"]["AuditEventDto"];
-export type MirrorStatus = components["schemas"]["MirrorStatusDto_Output"];
-export type MirrorAttempt = components["schemas"]["MirrorAttemptDto_Output"];
+export type RemoteStatus = components["schemas"]["RemoteStatusDto_Output"];
+export type RemoteAttempt = components["schemas"]["RemoteAttemptDto_Output"];
 export type ServerStatus = components["schemas"]["StatusDto_Output"];
 type CreateSession = components["schemas"]["CreateSessionDto"];
 type ExecBody = components["schemas"]["ExecDto"];
@@ -56,9 +56,9 @@ export class LoreClient {
   guide() { return this.request<string>("GET", "/guide", { raw: true }); }
   okfSpec() { return this.request<string>("GET", "/guide/okf", { raw: true }); }
   serverStatus() { return this.request<ServerStatus>("GET", "/admin/status"); }
-  mirrorStatus() { return this.request<MirrorStatus>("GET", "/admin/mirror"); }
-  mirrorLog() { return this.request<MirrorAttempt[]>("GET", "/admin/mirror/log"); }
-  mirrorSync() { return this.request<MirrorStatus>("POST", "/admin/mirror/sync"); }
+  remoteStatus() { return this.request<RemoteStatus>("GET", "/admin/remote"); }
+  remoteLog() { return this.request<RemoteAttempt[]>("GET", "/admin/remote/log"); }
+  remoteSync() { return this.request<RemoteStatus>("POST", "/admin/remote/sync"); }
 
   createSession(body: CreateSession) { return this.request<Session>("POST", "/sessions", { json: body }); }
   listSessions(q: { all?: boolean; user?: string } = {}) {

@@ -3,7 +3,7 @@ import type { Readable } from "node:stream";
 import { SessionsRepository, SessionRecord, SessionRow } from "./sessions.repository";
 import { ConfigService } from "../config";
 import { DockerService } from "../docker";
-import { GitRepoService } from "../git";
+import { GitRepoService, RemoteService } from "../git";
 import { AuditService } from "../audit";
 import { hashSecret, newSecret, shortId } from "../auth";
 import { TransportError, badRequest, sessionNotFound } from "../api";
@@ -29,6 +29,7 @@ export class SessionsService {
     private readonly config: ConfigService,
     private readonly docker: DockerService,
     private readonly git: GitRepoService,
+    private readonly remote: RemoteService,
     private readonly audit: AuditService,
   ) {}
 
@@ -51,6 +52,7 @@ export class SessionsService {
 
   async create(p: Principal, meta: { purpose?: string } = {}): Promise<SessionDto> {
     await this.docker.ping();
+    await this.remote.refresh("session"); // a session starts from the truth, which may be the remote
     const id = shortId(6);
     const gitToken = newSecret("loreg");
     this.repo.insert({

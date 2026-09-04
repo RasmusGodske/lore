@@ -75,70 +75,86 @@ lore login https://lore.example.com --token <token>
 claude mcp add --transport http lore https://lore.example.com/mcp --header "Authorization: Bearer <token>"
 ```
 
-## 5. Mirror the knowledge to GitHub
+## 5. Use a GitHub repository as the source of truth
 
-lore can push `main` to a GitHub repository after every landing, on boot, and every few
-minutes as a sweep. That gives you two things: a continuously current off-site copy of the
-knowledge, and GitHub's file browser, search, history and blame as a read-only way to look at
-what the team has written. It is one-way: edits made on GitHub are not pulled back, writes go
-through sessions.
+lore runs in one of two ways:
+
+- **Standalone.** No remote configured; lore's own repository is the knowledge base. Nothing
+  else is needed, and nothing leaves the server.
+- **With a remote.** A git repository, for example on GitHub, is the source of truth. lore keeps
+  a local copy current, every session starts from the remote's `main`, and landing a change
+  means pushing it to the remote: an agent's push is only accepted once GitHub has taken it.
+
+The second mode gives you a continuously current off-site copy and GitHub's file browser,
+search, history and blame as a read-only way to look at the knowledge. It also makes the
+repository editable on GitHub: a change made there is what the next session starts from, and
+if it happens while a session is in progress, that session merges it exactly as it would merge
+another session's work. What you give up is that such edits do not appear in lore's audit log;
+they are visible in git history under their GitHub author instead.
 
 ### 5.1 Create the repository
 
-On GitHub, create a new repository, for example `your-org/knowledge`. Private or public is
-your choice; it only decides who can read the mirror. Leave it empty: no README, no licence,
-no `.gitignore`. lore pushes the first commit.
+On GitHub, create a repository, for example `your-org/knowledge`, private or public as you
+prefer. It may be empty: lore pushes its bundle root on first boot. It may also already
+contain a knowledge base: lore then takes it as its starting point. Do not have both lore
+history and unrelated GitHub history; if lore already ran standalone and you now point it at a
+non-empty repository, the two have diverged and lore refuses to guess (see 5.5).
 
 ### 5.2 Create a token that may write to that one repository
 
-Use a fine-grained personal access token, so the credential cannot touch anything else you own.
+Use a fine-grained personal access token, so the credential cannot touch anything else.
 
 1. GitHub, top-right avatar, **Settings**.
 2. Left sidebar, bottom: **Developer settings**.
 3. **Personal access tokens**, then **Fine-grained tokens**, then **Generate new token**.
-4. Token name: `lore mirror`. Expiration: your policy; a year is reasonable, and the server's
-   status page tells you when pushes start failing.
+4. Token name: `lore`. Expiration: your policy; a year is reasonable, and `lore admin status`
+   tells you when fetches start failing.
 5. **Resource owner**: your account, or the organisation that owns the repository.
-6. **Repository access**: *Only select repositories*, and pick the mirror repository.
-7. **Permissions**, under *Repository permissions*: set **Contents** to *Read and write*.
-   That is the only permission needed. Leave everything else at *No access*; **Metadata** is
-   added automatically as read-only.
-8. Generate, and copy the token. It starts with `github_pat_` and is shown once.
+6. **Repository access**: *Only select repositories*, and pick the repository.
+7. **Permissions**, under *Repository permissions*: **Contents**, *Read and write*. That is the
+   only permission needed; **Metadata** is added automatically as read-only.
+8. Generate and copy the token. It starts with `github_pat_` and is shown once.
 
-For an organisation-owned repository, an organisation admin may need to approve fine-grained
-tokens under the organisation's settings, *Personal access tokens*.
+For an organisation-owned repository, an organisation admin may need to allow or approve
+fine-grained tokens under the organisation's settings, *Personal access tokens*.
 
 ### 5.3 Configure the server
 
 Add two lines to the server's `.env` (at `/srv/lore/.env` on the VM), then restart:
 
 ```
-LORE_MIRROR_URL=https://github.com/your-org/knowledge.git
-LORE_MIRROR_TOKEN=github_pat_...
+LORE_REMOTE_URL=https://github.com/your-org/knowledge.git
+LORE_REMOTE_TOKEN=github_pat_...
 ```
 
 ```bash
 cd /srv/lore && docker compose up -d
 ```
 
-The token is handed to git through a credential helper at push time; it never appears in a
-URL, a log line, the database, a backup, or the API.
+The token is handed to git through a credential helper at fetch and push time; it never
+appears in a URL, a log line, the database, a backup, or the API.
 
 ### 5.4 Check it
 
 ```bash
-lore admin status          # includes the mirror line
-lore admin mirror status   # remote, last success, last error
-lore admin mirror log      # recent attempts, newest first
-lore admin mirror sync     # push now
+lore admin status          # includes the remote line
+lore admin remote status   # remote, last success, last error, diverged or not
+lore admin remote log      # recent fetches and landings, newest first
+lore admin remote sync     # fetch now
 ```
 
-Then open the repository on GitHub: `main` should show the knowledge base's files. If a push
-fails, the server retries with backoff (one minute, two, four, up to fifteen) and the sweep
-tries again every fifteen minutes; `lore admin mirror status` shows the last error verbatim.
+Open the repository on GitHub: `main` should show the knowledge base. Land something through
+a session and it appears within a second; edit a file on GitHub and the next session starts
+with it.
 
-Other git hosts that accept a push over HTTPS with a token work the same way; only the token
-creation differs. Set `LORE_MIRROR_USERNAME` if the host requires a specific username.
+### 5.5 If it diverges
+
+lore never forces anything. If local `main` and the remote's `main` have both moved with
+commits the other lacks, `lore admin remote status` reports *diverged*, sessions can still be
+created but nothing can land until an operator picks a side: either push lore's `main` to the
+remote with `--force` from the server, or reset lore's `main` to the remote's. In practice this
+only happens when a server that ran standalone is pointed at a repository that already has its
+own history.
 
 ## 6. Backups
 

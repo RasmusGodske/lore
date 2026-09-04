@@ -610,15 +610,15 @@
             "bearer": []
           }
         ],
-        "summary": "Server status: version, uptime, sandbox runtime, session counts, mirror state",
+        "summary": "Server status: version, uptime, sandbox runtime, session counts, remote state",
         "tags": [
           "admin"
         ]
       }
     },
-    "/admin/mirror": {
+    "/admin/remote": {
       "get": {
-        "operationId": "AdminController_mirrorStatus",
+        "operationId": "AdminController_remoteStatus",
         "parameters": [],
         "responses": {
           "200": {
@@ -626,7 +626,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MirrorStatusDto_Output"
+                  "$ref": "#/components/schemas/RemoteStatusDto_Output"
                 }
               }
             }
@@ -637,15 +637,15 @@
             "bearer": []
           }
         ],
-        "summary": "Whether main is mirrored to a remote git repository, and how that is going",
+        "summary": "Whether a remote repository is the source of truth, and how following it is going",
         "tags": [
           "admin"
         ]
       }
     },
-    "/admin/mirror/log": {
+    "/admin/remote/log": {
       "get": {
-        "operationId": "AdminController_mirrorLog",
+        "operationId": "AdminController_remoteLog",
         "parameters": [],
         "responses": {
           "200": {
@@ -655,7 +655,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/MirrorAttemptDto_Output"
+                    "$ref": "#/components/schemas/RemoteAttemptDto_Output"
                   }
                 }
               }
@@ -667,15 +667,15 @@
             "bearer": []
           }
         ],
-        "summary": "The most recent mirror attempts, newest first",
+        "summary": "The most recent remote fetches and landings, newest first",
         "tags": [
           "admin"
         ]
       }
     },
-    "/admin/mirror/sync": {
+    "/admin/remote/sync": {
       "post": {
-        "operationId": "AdminController_mirrorSync",
+        "operationId": "AdminController_remoteSync",
         "parameters": [],
         "responses": {
           "200": {
@@ -683,7 +683,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MirrorStatusDto_Output"
+                  "$ref": "#/components/schemas/RemoteStatusDto_Output"
                 }
               }
             }
@@ -694,7 +694,7 @@
             "bearer": []
           }
         ],
-        "summary": "Push main to the mirror now",
+        "summary": "Fetch the remote now and bring local main in step with it",
         "tags": [
           "admin"
         ]
@@ -1077,7 +1077,7 @@
             ],
             "additionalProperties": false
           },
-          "mirror": {
+          "remote": {
             "type": "object",
             "properties": {
               "configured": {
@@ -1113,9 +1113,9 @@
                 "minimum": -9007199254740991,
                 "maximum": 9007199254740991
               },
-              "pending": {
+              "diverged": {
                 "type": "boolean",
-                "description": "A push is scheduled or running"
+                "description": "Local main and remote main moved independently; an operator must reconcile"
               }
             },
             "required": [
@@ -1125,7 +1125,7 @@
               "last_success_at",
               "last_error",
               "consecutive_failures",
-              "pending"
+              "diverged"
             ],
             "additionalProperties": false
           }
@@ -1135,11 +1135,11 @@
           "uptime_s",
           "sandbox_runtime",
           "sessions",
-          "mirror"
+          "remote"
         ],
         "additionalProperties": false
       },
-      "MirrorStatusDto_Output": {
+      "RemoteStatusDto_Output": {
         "type": "object",
         "properties": {
           "configured": {
@@ -1167,9 +1167,9 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
-          "pending": {
+          "diverged": {
             "type": "boolean",
-            "description": "A push is scheduled or running"
+            "description": "Local main and remote main moved independently; an operator must reconcile"
           }
         },
         "required": [
@@ -1179,11 +1179,11 @@
           "last_success_at",
           "last_error",
           "consecutive_failures",
-          "pending"
+          "diverged"
         ],
         "additionalProperties": false
       },
-      "MirrorAttemptDto_Output": {
+      "RemoteAttemptDto_Output": {
         "type": "object",
         "properties": {
           "at": {
@@ -1197,6 +1197,9 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
+          "outcome": {
+            "type": "string"
+          },
           "error": {
             "type": "string",
             "nullable": true
@@ -1204,11 +1207,12 @@
           "reason": {
             "type": "string",
             "enum": [
-              "landing",
               "boot",
+              "session",
+              "fetch",
               "sweep",
-              "retry",
-              "manual"
+              "manual",
+              "landing"
             ]
           }
         },
@@ -1216,6 +1220,7 @@
           "at",
           "ok",
           "duration_ms",
+          "outcome",
           "error",
           "reason"
         ],

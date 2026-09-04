@@ -5,6 +5,7 @@ import path from "node:path";
 import { ConfigService } from "../config";
 import { git, gitOrThrow, run } from "./shell";
 import { SANDBOX_UID } from "../docker";
+import { planRefresh, type RefreshPlan } from "./remote-plan";
 
 export interface WorkspaceSnapshot { status: string; diffstat: string; unpushed: string }
 
@@ -16,7 +17,11 @@ export class GitRepoService implements OnModuleInit {
 
   async onModuleInit() { await this.ensureRepo(); }
 
-  /** Create and seed the bare repo if missing; always (re)install the hooks. */
+  /**
+   * Create the bare repo if missing; always (re)install the hooks. Standalone: seed it. With a
+   * remote configured: take the remote's main if it has one, otherwise seed and let the first
+   * refresh push the seed to the remote, so an empty GitHub repository becomes a bundle root.
+   */
   async ensureRepo(): Promise<void> {
     const repo = this.config.repoPath;
     fs.mkdirSync(this.config.sessionsDir, { recursive: true });
@@ -24,7 +29,13 @@ export class GitRepoService implements OnModuleInit {
       this.log.log(`creating bare knowledge repo at ${repo}`);
       fs.mkdirSync(repo, { recursive: true });
       await gitOrThrow(["init", "--bare", "--initial-branch=main", repo]);
-      await this.seed();
+      const remoteMain = this.config.remote ? await this.fetchRemoteMain().catch((e) => { this.log.warn(`remote not reachable at first boot: ${String(e)}`); return null; }) : null;
+      if (remoteMain) {
+        await gitOrThrow(["--git-dir", repo, "update-ref", "refs/heads/main", remoteMain]);
+        this.log.log(`took main from the remote (${remoteMain.slice(0, 7)})`);
+      } else {
+        await this.seed();
+      }
     }
     const hooksDir = path.join(repo, "hooks");
     fs.mkdirSync(hooksDir, { recursive: true });
@@ -79,6 +90,56 @@ export class GitRepoService implements OnModuleInit {
   async refSha(ref: string): Promise<string | null> {
     const r = await git(["--git-dir", this.config.repoPath, "rev-parse", "--verify", "--quiet", ref]);
     return r.code === 0 ? r.stdout.trim() : null;
+  }
+
+  /** Environment for git commands that talk to the remote: credentials via a helper, never in argv. */
+  private remoteEnv(): NodeJS.ProcessEnv {
+    const r = this.config.remote!;
+    return { LORE_REMOTE_USERNAME: r.username, LORE_REMOTE_TOKEN: r.token, GIT_TERMINAL_PROMPT: "0" };
+  }
+  private static readonly CREDENTIAL_HELPER = '!f() { echo "username=$LORE_REMOTE_USERNAME"; echo "password=$LORE_REMOTE_TOKEN"; }; f';
+
+  /** The remote's main, or null if the remote has no main branch yet. Throws if unreachable. */
+  async fetchRemoteMain(): Promise<string | null> {
+    const r = this.config.remote!;
+    const res = await git(["--git-dir", this.config.repoPath, "-c", `credential.helper=${GitRepoService.CREDENTIAL_HELPER}`, "fetch", "--quiet", r.url, "+refs/heads/main:refs/remotes/lore-remote/main"], { env: this.remoteEnv() });
+    if (res.code === 0) return (await this.refSha("refs/remotes/lore-remote/main"));
+    if (/couldn't find remote ref|no such ref/i.test(res.stderr)) return null;
+    throw new Error(res.stderr.trim().split("\n").slice(-2).join(" | ") || `git fetch exited ${res.code}`);
+  }
+
+  /** Push a commit to the remote's main, fast-forward only. Throws with git's message on refusal. */
+  async pushMainToRemote(sha: string): Promise<void> {
+    const r = this.config.remote!;
+    const res = await git(["--git-dir", this.config.repoPath, "-c", `credential.helper=${GitRepoService.CREDENTIAL_HELPER}`, "push", "--quiet", r.url, `${sha}:refs/heads/main`], { env: this.remoteEnv() });
+    if (res.code !== 0) throw new Error(res.stderr.trim().split("\n").slice(-2).join(" | ") || `git push exited ${res.code}`);
+    await gitOrThrow(["--git-dir", this.config.repoPath, "update-ref", "refs/remotes/lore-remote/main", sha]);
+  }
+
+  /**
+   * Bring local main in step with the remote: fetch, then fast-forward local main to the remote's,
+   * or push lore's main if the remote is still empty. Returns what was done. "diverged" means
+   * both moved independently and an operator must reconcile; nothing is forced.
+   */
+  async refreshFromRemote(): Promise<RefreshPlan & { newCommits?: number }> {
+    const remote = await this.fetchRemoteMain();
+    const local = await this.refSha("refs/heads/main");
+    const repo = this.config.repoPath;
+    let plan: RefreshPlan;
+    if (local && remote && local !== remote) {
+      const anc = (await git(["--git-dir", repo, "merge-base", "--is-ancestor", local, remote])).code === 0;
+      plan = planRefresh(local, remote, () => anc);
+    } else {
+      plan = planRefresh(local, remote, () => false);
+    }
+    if (plan.kind === "fast-forward") {
+      const count = local ? Number((await git(["--git-dir", repo, "rev-list", "--count", `${local}..${plan.to}`])).stdout.trim() || 0) : 1;
+      await gitOrThrow(["--git-dir", repo, "update-ref", "refs/heads/main", plan.to, ...(local ? [local] : [])]);
+      await this.afterLanding();
+      return { ...plan, newCommits: count };
+    }
+    if (plan.kind === "push-local") await this.pushMainToRemote(plan.sha);
+    return plan;
   }
 
   /** Fast-forward main to sha if sha descends from it. Backstop for the post-receive hook. */

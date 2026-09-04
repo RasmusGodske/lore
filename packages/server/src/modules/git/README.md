@@ -8,10 +8,12 @@ itself (`hook.ts`, a standalone script run by git, whose rules are the pure func
 `hook-rules.ts`) and the push lock that serializes receive-packs so the hook's check and the
 landing cannot race.
 
-Also owns the mirror: when `LORE_MIRROR_URL` is set, `MirrorService` pushes `main` to that remote
-after every landing, on boot, and on a periodic sweep, with backoff on failure; the token goes to
-git through a credential helper and never appears in a URL, a log, or the API. The `admin` module
-exposes its state, attempt log, and a forced push. One-way only.
+Also owns the remote: when `LORE_REMOTE_URL` is set, that repository is the source of truth.
+`RemoteService` keeps local `main` in step with it (boot, before a session starts, when a
+sandbox fetches, a periodic sweep, on request), never forcing anything and reporting divergence
+instead. The hook lands on the remote itself: fetch, check the rules against the remote's
+`main`, push, then accept. The token goes to git through a credential helper and never appears
+in a URL, a log, or the API.
 
 Public surface: `GitModule`, `GitRepoService`, `PushLockService`, `MirrorService`.
 
