@@ -1,3 +1,8 @@
+---
+title: Working instructions for agents
+type: Guide
+---
+
 # Working instructions for agents
 
 This repository is the team's shared knowledge base: what we know about our systems, the
@@ -15,7 +20,8 @@ Nothing lands until you push, and a push is accepted only if it contains the lat
    ```
    git add -A && git commit -m "Document how the nightly import handles retries" && git push origin HEAD
    ```
-   If the push is rejected because `main` moved: `git fetch origin && git merge origin/main`,
+   An accepted push lands on `main` immediately; there is no review step, and mistakes are
+   corrected afterwards. If the push is rejected because `main` moved: `git fetch origin && git merge origin/main`,
    resolve conflict markers in the files, commit, push again. Never rebase, never force.
 5. If you added a file, add a line for it in that directory's `index.md`.
 
@@ -97,7 +103,7 @@ Every document starts with YAML frontmatter. `title` and `type` are required; ev
 else is optional and only worth adding when it says something true.
 
 - `type`: free text describing the kind of document, e.g. `Topic`, `Decision`, `History`,
-  `Index`.
+  `Guide`. `index.md` files carry no frontmatter (the root one only declares `okf_version`).
 - `tags`: list of lowercase slugs.
 - `sources`: where the facts came from.
 - `generated.by` / `generated.at`: who or what wrote it and when.

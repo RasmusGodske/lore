@@ -7,7 +7,8 @@ import type { Session } from "../client.js";
 const HELP = `usage: lore session <command>
 
   create [--purpose TEXT]                     create a session, print its id
-  list [--all] [--user ID]                    list sessions (active by default)
+  list [--all] [--mine] [--user ID] [--since 2026-09-04]
+                                              list sessions (active by default)
   show [ID]                                   show one session
   close [ID]                                  close a session; unpushed work is discarded
   log [ID]                                    the session's audit log
@@ -27,8 +28,15 @@ export async function session(args: string[]) {
       return;
     }
     case "list": {
-      const { values } = parse(rest, { all: { type: "boolean" }, user: { type: "string" }, json: { type: "boolean" } });
-      const list = await makeContext().client.listSessions({ all: values.all, user: values.user });
+      const { values } = parse(rest, { all: { type: "boolean" }, mine: { type: "boolean" }, user: { type: "string" }, since: { type: "string" }, json: { type: "boolean" } });
+      const { client } = makeContext();
+      const user = values.mine ? (await client.me()).user_id : values.user;
+      let list = await client.listSessions({ all: values.all, user });
+      if (values.since) {
+        const since = Date.parse(values.since);
+        if (Number.isNaN(since)) throw usage("--since takes a date, e.g. 2026-09-04 or 2026-09-04T12:00:00Z");
+        list = list.filter((s) => Date.parse(s.created_at) >= since);
+      }
       if (wantsJson(values.json)) printJson(list);
       else printTable(list.map(row), ["ID", "STATE", "USER/TOKEN", "LAST ACTIVITY", "PURPOSE"]);
       return;

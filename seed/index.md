@@ -1,8 +1,8 @@
 ---
-title: Knowledge base
-type: Index
 okf_version: "0.2"
 ---
+
+# Knowledge base
 
 The team's shared knowledge base. Read `AGENTS.md` first if you are an agent.
 

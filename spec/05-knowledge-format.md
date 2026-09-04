@@ -120,6 +120,21 @@ Use `stale_after` on anything describing live configuration or the state of an e
 system. That is the field that stops an agent confidently repeating a year-old setup as
 current.
 
+## What OKF reserves, and what is ours
+
+OKF reserves exactly two filenames: `index.md` (the directory listing used for progressive
+disclosure) and `log.md` (a chronological history of updates). Index files carry no
+frontmatter, with one exception: the bundle-root `index.md` may declare `okf_version`. Every
+other markdown file must have a frontmatter block with a non-empty `type`. The seed follows
+this: index files are plain markdown, the root one declares the version, and `AGENTS.md`
+carries `title` and `type: Guide` like any other document.
+
+`AGENTS.md` itself is **not** part of OKF. It is this project's convention, borrowed from the
+general `AGENTS.md` practice for agent instructions, and nothing enforces it: the hook validates
+no content, the server never reads it, and the MCP tool description tells an agent to read
+`index.md` and, if the repository has one, `AGENTS.md`. A team that prefers another name or no
+instructions at all only edits its own repository.
+
 ## Progressive disclosure
 
 An agent cannot read a few hundred files at session start. `index.md` files at each level
@@ -127,7 +142,8 @@ are the mechanism: a short catalogue of what is in that directory and when to lo
 an agent can orient cheaply and then read only what it needs.
 
 Keep index files current. Generating them from frontmatter is the obvious automation and a
-good candidate for a generator script.
+good candidate for a generator script. Remember that index files themselves carry no
+frontmatter.
 
 ## AGENTS.md — the part that actually determines whether this works
 

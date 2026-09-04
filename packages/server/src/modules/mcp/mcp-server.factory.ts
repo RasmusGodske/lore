@@ -7,15 +7,15 @@ import type { Principal } from "../auth";
 
 const SHELL_DESCRIPTION = `Run a shell command inside a sandboxed checkout of the shared knowledge base.
 
-/workspace is a real git clone on your own branch (session/<id>); nothing you do there is visible to anyone until you push. You have the normal Unix tools: rg, cat, ls, sed, awk, jq, python3, git. Start by reading /workspace/AGENTS.md and /workspace/index.md.
+/workspace is a real git clone on your own branch (session/<id>); nothing you do there is visible to anyone until you push. You have the normal Unix tools: rg, cat, ls, sed, awk, jq, python3, git, and no network. Start by reading /workspace/index.md, and /workspace/AGENTS.md if the repository has one: that is where its owners keep the writing conventions.
 
 To land changes:
   git add -A && git commit -m "..." && git push origin HEAD
-If the push is rejected because main moved, run:
+An accepted push lands on main immediately; there is no review step. If the push is rejected because main moved, run:
   git fetch origin && git merge origin/main
 resolve any conflict markers in the files, commit, and push again. Never rebase or force-push.
 
-Returns stdout, stderr and the exit code exactly as the command produced them. A non-zero exit code means the command failed, not the tool. Output is capped at 1 MB. For bulk file transfer use the lore CLI, which can stream stdin into a command (e.g. tar | lore exec -- 'tar -x').`;
+Returns stdout, stderr and the exit code exactly as the command produced them. A non-zero exit code means the command failed, not the tool. Output is capped at 1 MB. For bulk file transfer, the lore CLI on the machine you run on (not inside the sandbox) can stream stdin into a command: tar -c . | lore exec <session_id> -- 'tar -x'.`;
 
 const CREATE_DESCRIPTION = `Create a knowledge-base session: a fresh sandbox with its own checkout and branch. Call this once per task, then pass the returned session_id to lore_shell. Close it with lore_session_close when the task is done. Idle sessions are reaped after 24 hours and their unpushed work is discarded.`;
 
