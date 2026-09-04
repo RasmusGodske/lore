@@ -16,9 +16,6 @@
       "onAutoForward": "silent"
     }
   },
-  "containerEnv": {
-    "LORE_URL": "http://localhost:8480"
-  },
   "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
   "customizations": {
     "vscode": {

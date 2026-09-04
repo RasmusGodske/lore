@@ -1,7 +1,7 @@
 import { makeContext, resolveSessionId } from "../context.js";
 import { joinCommand, parse, splitDoubleDash } from "../args.js";
 import { printJson } from "../output.js";
-import { usage } from "../errors.js";
+import { usage, HelpRequested, wantsHelp } from "../errors.js";
 
 const HELP = `usage: lore exec [ID] [--cwd DIR] [--timeout MS] [--json] -- <command...>
 
@@ -12,6 +12,7 @@ code pass through untouched. When stdin is not a terminal it is streamed to the 
   tar -C docs -c . | lore exec -- 'tar -x -C talks'`;
 
 export async function exec(args: string[]) {
+  if (wantsHelp(args)) throw new HelpRequested(HELP);
   const { own, rest } = splitDoubleDash(args);
   const { values, positionals } = parse(own, { cwd: { type: "string" }, timeout: { type: "string" }, json: { type: "boolean" }, "no-stdin": { type: "boolean" } });
   if (rest.length === 0) throw usage(HELP);

@@ -96,6 +96,9 @@ with the NestJS binding written from this repo. The parts a test will fail you o
   locked the VM out (recovered through the provider's rescue system by setting `ENABLED=no` in
   `/etc/ufw/ufw.conf` on the disk). Delete by specification (`ufw delete deny in on lore-net`)
   or rebuild the whole rule set with `ufw --force reset` followed by the rules in order.
+- **The stack tier writes to `main`.** It was once run against the production VM through a tunnel
+  and left test documents in the real knowledge base. `stackTier()` now refuses non-local URLs
+  unless `LORE_TEST_ALLOW_REMOTE=1`; only set that for a disposable server.
 - **`lore` reads stdin whenever it is not a terminal.** In scripts, add `< /dev/null` to an exec
   that must not receive input.
 - **`printf` treats a leading `---` as an option.** Frontmatter written from a shell needs

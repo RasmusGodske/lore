@@ -42,7 +42,8 @@ export class LoreClient {
     if (!res.ok) {
       let message = text; let code: number | undefined;
       try { const j = JSON.parse(text); message = j.error?.message ?? text; code = j.error?.code; } catch { /* not json */ }
-      throw new CliError(codeForStatus(res.status, code ?? 100), message);
+      const code2 = codeForStatus(res.status, code ?? 100);
+      throw new CliError(code2, code2 === 102 || code2 === 101 ? `${message} (server: ${this.url})` : message);
     }
     if (init.raw) return text as unknown as T;
     return (res.headers.get("content-type")?.startsWith("application/json") ? JSON.parse(text) : text) as T;

@@ -6,3 +6,9 @@ export class CliError extends Error {
   }
 }
 export const usage = (msg: string) => new CliError(104, msg);
+
+/** Thrown to print a command's usage on stdout and exit 0 (`lore session --help`). */
+export class HelpRequested extends Error {
+  constructor(public readonly text: string) { super("help"); this.name = "HelpRequested"; }
+}
+export const wantsHelp = (args: string[]) => args.includes("--help") || args.includes("-h") || args[0] === "help";

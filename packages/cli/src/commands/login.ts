@@ -17,6 +17,7 @@ export async function login(args: string[]) {
 
 export async function me(args: string[]) {
   const { values } = parse(args, { json: { type: "boolean" } });
-  const m = await makeContext().client.me();
-  if (wantsJson(values.json)) printJson(m); else process.stdout.write(`${m.user}${m.admin ? " (admin)" : ""} via token '${m.token}'\n`);
+  const { client, url } = makeContext();
+  const m = await client.me();
+  if (wantsJson(values.json)) printJson({ ...m, server: url }); else process.stdout.write(`${m.user}${m.admin ? " (admin)" : ""} via token '${m.token}' at ${url}\n`);
 }

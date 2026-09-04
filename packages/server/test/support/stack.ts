@@ -11,7 +11,15 @@ export interface Stack { url: string; adminToken: string }
 export function stackTier(): Stack | null {
   const url = process.env.LORE_TEST_URL;
   const adminToken = process.env.LORE_TEST_ADMIN_TOKEN;
-  return url && adminToken ? { url: url.replace(/\/$/, ""), adminToken } : null;
+  if (!url || !adminToken) return null;
+  // The suite pushes test documents to main. Refuse anything that is not a local stack unless
+  // explicitly allowed, so a real knowledge base is never used as a test fixture by accident.
+  const host = new URL(url).hostname;
+  const local = host === "localhost" || host === "127.0.0.1" || host === "::1";
+  if (!local && process.env.LORE_TEST_ALLOW_REMOTE !== "1") {
+    throw new Error(`refusing to run the stack tier against ${host}: it writes to main. Set LORE_TEST_ALLOW_REMOTE=1 only for a disposable server.`);
+  }
+  return { url: url.replace(/\/$/, ""), adminToken };
 }
 export const skipReason = "stack tier: set LORE_TEST_URL and LORE_TEST_ADMIN_TOKEN (npm run test:stack)";
 

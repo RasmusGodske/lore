@@ -1,7 +1,7 @@
 import { makeContext } from "../context.js";
 import { parse } from "../args.js";
 import { printJson, printTable, wantsJson } from "../output.js";
-import { usage } from "../errors.js";
+import { usage, HelpRequested, wantsHelp } from "../errors.js";
 
 const HELP = `usage: lore token <command>
 
@@ -10,6 +10,7 @@ const HELP = `usage: lore token <command>
   revoke <id>        revoke one of your tokens (admins may revoke anyone's)`;
 
 export async function token(args: string[]) {
+  if (wantsHelp(args)) throw new HelpRequested(HELP);
   const [sub, ...rest] = args;
   const { values, positionals } = parse(rest, { json: { type: "boolean" } });
   const { client } = makeContext();

@@ -1,7 +1,7 @@
 import { makeContext } from "../context.js";
 import { parse } from "../args.js";
 import { printJson, printTable, wantsJson } from "../output.js";
-import { usage } from "../errors.js";
+import { usage, HelpRequested, wantsHelp } from "../errors.js";
 
 const HELP = `usage: lore user <command>        (admin only)
 
@@ -10,6 +10,7 @@ const HELP = `usage: lore user <command>        (admin only)
   token <user> <label>       mint a token for a user (their first one; afterwards they mint their own)`;
 
 export async function user(args: string[]) {
+  if (wantsHelp(args)) throw new HelpRequested(HELP);
   const [sub, ...rest] = args;
   const { values, positionals } = parse(rest, { admin: { type: "boolean" }, json: { type: "boolean" } });
   const { client } = makeContext();

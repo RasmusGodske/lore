@@ -37,7 +37,6 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
 USER root
 RUN printf '%s\n' \
       'export PATH="$HOME/.local/bin:$PATH"' \
-      'export LORE_URL="http://localhost:8480"' \
       >> /home/vscode/.zshrc \
     && chown -R vscode:vscode /home/vscode \
     && su - vscode -c 'export PATH="$HOME/.local/bin:$PATH"; uv --version && claude --version && omp --version'

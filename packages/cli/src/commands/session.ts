@@ -1,7 +1,7 @@
 import { makeContext, resolveSessionId } from "../context.js";
 import { parse } from "../args.js";
 import { formatAuditEvent, printJson, printTable, wantsJson } from "../output.js";
-import { usage } from "../errors.js";
+import { usage, HelpRequested, wantsHelp } from "../errors.js";
 import type { Session } from "../client.js";
 
 const HELP = `usage: lore session <command>
@@ -17,6 +17,7 @@ ID defaults to $LORE_SESSION. Add --json for machine-readable output (default wh
 const row = (s: Session) => [s.id, s.state, `${s.user}/${s.token_label}`, s.last_activity_at, s.purpose ?? ""];
 
 export async function session(args: string[]) {
+  if (wantsHelp(args)) throw new HelpRequested(HELP);
   const [sub, ...rest] = args;
   switch (sub) {
     case "create": {
