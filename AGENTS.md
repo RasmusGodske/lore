@@ -91,6 +91,11 @@ with the NestJS binding written from this repo. The parts a test will fail you o
   the host, and its SSH and Caddy answered. The bridge has a fixed name (`lore-net`) so the host
   firewall can refuse everything arriving from it; on ufw that rule must be inserted *before*
   the allow rules, because ufw stops at the first match.
+- **Never delete ufw rules by number in a loop.** Rule numbers shift after each deletion; a loop
+  that deleted "rule 1 until the bridge rule is gone" removed the SSH, HTTP and HTTPS allows and
+  locked the VM out (recovered through the provider's rescue system by setting `ENABLED=no` in
+  `/etc/ufw/ufw.conf` on the disk). Delete by specification (`ufw delete deny in on lore-net`)
+  or rebuild the whole rule set with `ufw --force reset` followed by the rules in order.
 - **`lore` reads stdin whenever it is not a terminal.** In scripts, add `< /dev/null` to an exec
   that must not receive input.
 - **`printf` treats a leading `---` as an option.** Frontmatter written from a shell needs

@@ -105,6 +105,15 @@ Rolling back is the same with the previous version number.
 Sessions that are active during the restart keep their containers; the orchestrator
 reconciles them at boot.
 
+## If you lock yourself out
+
+The host firewall is ufw with default deny. If a rule change ever removes the SSH allow, use
+the provider's rescue system: boot into it (at Hetzner, "enable rescue" with your key and reset
+the server), mount the root partition, set `ENABLED=no` in `/etc/ufw/ufw.conf`, disable rescue,
+reset again. The provider-level firewall still limits the server to 22, 80 and 443 meanwhile.
+Then rebuild the rules in order: `ufw --force reset`, defaults, `deny in on lore-net`, the
+three allows, `enable`. Never delete rules by number in a loop; numbers shift after each delete.
+
 ## What is exposed
 
 Only Caddy listens on the internet, on 80 and 443. The orchestrator binds to localhost.
