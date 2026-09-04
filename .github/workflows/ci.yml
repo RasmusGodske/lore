@@ -31,11 +31,14 @@ jobs:
       - run: npm ci && npm run build
       - name: start the stack
         run: |
+          mkdir -p data
           docker compose up -d --build
           for i in $(seq 1 30); do curl -sf http://localhost:8480/health && break; sleep 2; done
           docker compose exec -T orchestrator lore-admin user create ci --admin
-          docker compose exec -T orchestrator lore-admin token create ci ci | tr -d '\r' > data/.token-dev
+          docker compose exec -T orchestrator lore-admin token create ci ci | tr -d '\r' > "$RUNNER_TEMP/token"
       - name: stack tier
-        run: npm run test:stack -w packages/server
+        env:
+          LORE_TEST_URL: http://localhost:8480
+        run: LORE_TEST_ADMIN_TOKEN="$(cat "$RUNNER_TEMP/token")" npm run test:stack -w packages/server
       - if: failure()
         run: docker compose logs orchestrator
