@@ -67,10 +67,15 @@ format is a convention readers rely on, not a gate.
 
 ## Bulk data
 
-Command output is capped at 1 MB. To move files in, use the lore command-line client on the
-machine you run on (not inside the sandbox), which streams stdin into a command:
+Command output is capped at 1 MB, and a tool call carries no stdin, so a file that already
+exists on your machine should not be written through the shell tool. Use the lore
+command-line client on the machine you run on (not inside the sandbox): its own MCP server
+(\`lore mcp\`) offers lore_put, which copies a local file or directory into a session, and on
+the command line it streams stdin into a command:
 
     tar -c . | lore exec <session_id> -- 'tar -x'
+
+Both send the bytes directly to the server; nothing passes through you.
 
 ## Audit
 
