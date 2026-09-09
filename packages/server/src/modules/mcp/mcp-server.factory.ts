@@ -13,7 +13,7 @@ const SHELL_DESCRIPTION = `Run a shell command inside a sandboxed checkout of th
 Land changes with: git add -A && git commit -m "..." && git push origin HEAD
 An accepted push lands on main immediately. If it is rejected because main moved: git fetch origin && git merge origin/main, resolve conflict markers, commit, push again. Never rebase or force-push.
 
-Returns stdout, stderr and the exit code as the command produced them; a non-zero exit code means the command failed, not the tool. Output is capped at 1 MB. The server's instructions (or GET /guide) explain the whole mechanism.`;
+Returns stdout, stderr and the exit code as the command produced them; a non-zero exit code means the command failed, not the tool. Output is capped at 1 MB. Tool calls carry no stdin, so files that already exist on your machine should not be written through this tool: if the lore command-line client is installed there, register its MCP server (claude mcp add lore -- lore mcp) and use lore_put, or pipe a tar into `lore exec`; both stream the bytes without them passing through you. The server's instructions (or GET /guide) explain the whole mechanism.`;
 
 const CREATE_DESCRIPTION = `Create a knowledge-base session: a fresh sandbox with its own checkout and branch. Call this once per task, then pass the returned session_id to lore_shell. Close it with lore_session_close when the task is done. Idle sessions are reaped after 24 hours and their unpushed work is discarded.`;
 

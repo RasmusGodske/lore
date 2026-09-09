@@ -148,8 +148,8 @@ authenticated by the git token in its path. No TLS in the first build; do not ex
 ## MCP server
 
 Served at `/mcp` over streamable HTTP by the official `@modelcontextprotocol/sdk`, in the
-same process as the API. Agents connect directly with a bearer token; there is no local
-stdio bridge in the first version:
+same process as the API. Agents without a shell connect directly with a bearer token; agents
+with the CLI on their machine use its own MCP server instead (below):
 
 ```bash
 claude mcp add --transport http lore http://host:8080/mcp \
@@ -180,8 +180,11 @@ container for at most the idle timeout.
 **Name the exec tool for what it is.** Something like `lore_shell` with a description making
 clear it is a real shell in a sandboxed checkout of the knowledge base, that `/workspace` is
 a git repo, and that landing changes means committing and pushing. Tool calls carry no
-stdin, so the description also points agents that have a shell at the `lore` CLI for bulk
-transfers. The description is where the agent learns the workflow.
+stdin, so the description also points agents that have a shell at the CLI: `lore mcp` for its
+`lore_put` tool, or a tar piped into `lore exec`. The description is where the agent learns
+the workflow, and this sentence is the one that matters most: an agent that has files on its
+machine and only the shell tool will try to type their content through it, which is slow at
+a few kilobytes and impossible at a megabyte.
 
 Alongside the tools, ship the working instructions — what to write, when, where things go —
 as documented in `05-knowledge-format.md`. Those matter more than the tool surface.
@@ -197,16 +200,37 @@ agent to read it; the intent is that a team reads once, writes its own conventio
 repository, and agents follow those from then on. Conventions about content are the knowledge
 repository's own (spec 05).
 
-### `lore mcp`: the stdio bridge
+### `lore mcp`: the CLI's own MCP server
 
-Some MCP clients cannot reach a remote HTTP server, or cannot attach a header to it, and every
-client that can still needs the URL and the token pasted into its own configuration. The CLI
-therefore also speaks MCP over stdio: `lore mcp` reads JSON-RPC messages on stdin, sends each
-one to the logged-in server's `/mcp` with the saved token, and writes the replies to stdout,
-unwrapping server-sent events where the server streams. It defines no tools of its own; the
-server remains the single place the tool surface is declared. Registering it is one line with
-nothing secret in it: `claude mcp add lore -- lore mcp`. The HTTP endpoint stays for callers
-without a shell.
+The CLI also speaks MCP over stdio, and it is a second, separate implementation rather than a
+relay to `/mcp`. `lore mcp` offers the same five tools under the same names, implemented in the
+CLI against the HTTP API the way every other command is, and one more that only a process
+running where the files are can offer:
+
+| Tool | Arguments |
+|---|---|
+| `lore_put` | `session_id`, `source` (a local file or directory), `dest?` (a directory under `/workspace`, default the root) |
+
+`lore_put` runs `tar -c` locally and streams the archive into `tar -x` in the session through
+the stdin exec route, exactly what `tar -c . | lore exec -- 'tar -x'` does on the command
+line; the bytes go from the machine to the server and never through the model. It reports
+what it copied and refuses a destination that leaves the workspace. The reverse, a `lore_get`,
+is deliberately absent: exec output is a string capped at 1 MB, so a real download needs a
+server route first.
+
+Two servers means two places declare a tool surface, and that is accepted: the remote endpoint
+serves callers without a shell and can never offer a file transfer, while the CLI's server is
+a superset that behaves exactly as the CLI does, using the saved login. The instructions the
+CLI's server hands the client at initialize are fetched from the server's guide, so that text
+stays written once. Registering it is one line with nothing secret in it:
+`claude mcp add lore -- lore mcp`. It has no runtime dependency, like the rest of the CLI: the
+JSON-RPC handling it needs for a tools-only server is initialize, ping, tools/list and
+tools/call, which is small enough to own.
+
+An earlier version relayed each JSON-RPC message to `/mcp` unchanged so that the server stayed
+the single place the surface was declared. It was replaced when an agent with the CLI
+installed spent twenty minutes failing to move 339 files through the shell tool, because
+nothing it could see told it the stdin route existed.
 
 ## Errors: two vocabularies
 

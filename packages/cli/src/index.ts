@@ -22,8 +22,8 @@ const HELP = `usage: lore <command> [args]
   exec [ID] -- <cmd...>    run a command in a session (streams stdin when piped)
   token <subcommand>       create | list | revoke
   admin <subcommand>       status | remote | user   (admin only; managing the server)
-  mcp                      MCP server over stdio, relaying to the logged-in server
-                           (claude mcp add lore -- lore mcp)
+  mcp                      MCP server over stdio: the server's tools plus lore_put for
+                           copying local files in (claude mcp add lore -- lore mcp)
 
 Environment: LORE_URL, LORE_TOKEN override the config file; LORE_SESSION is the default session id.
 Exit codes: the command's own; 100 connection, 101 auth, 102 no such session, 103 timeout, 104 usage.`;
