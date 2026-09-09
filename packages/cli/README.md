@@ -13,6 +13,8 @@ lore token <cmd>              create | list | revoke
 lore user <cmd>               create | list | token          (admin only)
 lore mirror <cmd>           status | sync            (whether main is mirrored to a git host)
 lore mcp                    MCP server over stdio: the server's tools plus lore_put
+lore update [--check]       install the latest published version with npm
+lore --version
 ```
 
 `lore mcp` lets any MCP client use the saved login: `claude mcp add lore -- lore mcp`. It is
@@ -21,6 +23,11 @@ offers, implemented against the HTTP API like every other command, plus `lore_pu
 copies a local file or directory into a session by streaming it, the same path as
 `tar -c . | lore exec -- 'tar -x'`. An agent with the CLI on its machine should register this
 one; the HTTP endpoint is for callers without a shell.
+
+`lore update` runs `npm install -g @rasmusgodske/lore@<latest>` for you, after asking the npm
+registry what the latest is; if the global install belongs to root it prints the `sudo` line to
+run instead. Once a day an interactive command may add one line on stderr when a newer version
+exists (`LORE_NO_UPDATE_CHECK=1` turns that off; it never prints in `lore mcp` or when piped).
 
 `LORE_URL` and `LORE_TOKEN` override the config file. `LORE_SESSION` is the default session id.
 Output is JSON when stdout is not a terminal, readable otherwise; `--json` forces JSON.
