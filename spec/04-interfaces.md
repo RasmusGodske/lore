@@ -99,12 +99,28 @@ lore session close k7m2xq
 
 lore token create --label slack-agent         # my own tokens: create | list | revoke
 lore user create bot && lore user token bot slack   # admin: users, and anyone's tokens
+
+lore --version                                # 0.1.10
+lore update --check                           # is there a newer version on npm?
+lore update                                   # npm install -g @rasmusgodske/lore@<latest>
 ```
 
 `lore exec` streams its stdin to the command whenever stdin is not a terminal, which is how
 bulk data — a file, a tar stream — gets into a workspace (`02-session-lifecycle.md`). The
 session ID may be omitted when `LORE_SESSION` is set; nothing is persisted as a "current
 session", so two shells never fight over one.
+
+**Keeping it current.** The CLI is an npm package, so updating is `npm install -g` with the
+latest version, and `lore update` runs exactly that for you: it reads its own version from
+the `package.json` the release workflow stamped, asks the registry for the `latest` tag over
+plain HTTPS, and only then calls npm. When the global prefix belongs to root the install fails
+with a permission error; the command then prints the `sudo npm install -g …` line to run and
+passes npm's exit code through, rather than trying sudo itself. Nobody runs an update command
+they are not reminded of, which is how a machine sat on a version without `lore_put`: once a
+day, an interactive command may add one line on stderr saying a newer version exists. It never
+prints in `lore mcp`, where stdout is the protocol, nor when output is piped or `--json`, and
+it stays silent offline; `LORE_NO_UPDATE_CHECK=1` turns it off. The check's timestamp lives
+beside the config file.
 
 Output is JSON when stdout is not a terminal and tables (for `session log`, a readable
 transcript) when it is; `--json` forces JSON. Because it is well-behaved, it composes: an
