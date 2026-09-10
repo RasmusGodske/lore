@@ -11,6 +11,7 @@ export const SessionSchema = z.object({
   user_id: z.string(),
   token_label: z.string(),
   purpose: z.string().nullable(),
+  read_only: z.boolean(),
   base_commit: z.string().nullable(),
   created_at: z.string(),
   last_activity_at: z.string(),
@@ -21,6 +22,7 @@ export class SessionDto extends zodDto(SessionSchema) {}
 
 export class CreateSessionDto extends zodDto(z.object({
   purpose: z.string().max(500).optional().describe("What this session is for, one line"),
+  read_only: z.boolean().optional().describe("Refuse every push from this session; it may read but not write"),
 })) {}
 
 export class ListSessionsQueryDto extends zodDto(z.object({

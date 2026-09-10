@@ -58,6 +58,7 @@ export class GitHttpController {
       REQUEST_METHOD: req.method,
       QUERY_STRING: url.search.replace(/^\?/, ""),
       REMOTE_USER: session.id,
+      ...(session.read_only ? { LORE_SESSION_READ_ONLY: "1" } : {}),
       REMOTE_ADDR: req.ip ?? "",
       CONTENT_TYPE: req.headers["content-type"] ?? "",
       CONTENT_LENGTH: req.headers["content-length"] ?? "",

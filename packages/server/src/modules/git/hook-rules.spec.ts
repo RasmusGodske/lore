@@ -24,6 +24,26 @@ describe("pre-receive rules", () => {
     assert.match(v.messages[0], /no session identity/);
   });
 
+  it("rule 0: a read-only session may not push its own branch either", () => {
+    const v = checkPush({ session: "k7m2xq", updates: [own()], main: MAIN, isAncestor: happy, readOnly: true });
+    assert.equal(v.ok, false);
+    assert.match(v.messages[0], /read-only/);
+  });
+
+  it("rule 0: read-only is refused before any other rule could have accepted it", () => {
+    // The push is otherwise perfect: own branch, fast-forward, contains main.
+    const permitted = checkPush({ session: "k7m2xq", updates: [own()], main: MAIN, isAncestor: happy });
+    assert.equal(permitted.ok, true);
+
+    const refused = checkPush({ session: "k7m2xq", updates: [own()], main: MAIN, isAncestor: happy, readOnly: true });
+    assert.equal(refused.ok, false);
+  });
+
+  it("a session that is not read-only is unaffected", () => {
+    const v = checkPush({ session: "k7m2xq", updates: [own()], main: MAIN, isAncestor: happy, readOnly: false });
+    assert.equal(v.ok, true);
+  });
+
   it("rule 1: main is not writable, and the message names the session branch to use", () => {
     const v = checkPush({ session: "k7m2xq", updates: [own({ ref: "refs/heads/main" })], main: MAIN, isAncestor: happy });
     assert.equal(v.ok, false);

@@ -43,10 +43,11 @@ export class McpServerFactory {
       description: CREATE_DESCRIPTION,
       inputSchema: {
         purpose: z.string().max(500).optional().describe("What this session is for, in one line."),
+        read_only: z.boolean().optional().describe("Refuse every push from this session; it may read the knowledge base but not write to it."),
       },
-    }, async ({ purpose }) => {
+    }, async ({ purpose, read_only }) => {
       try {
-        const s = await sessions.create(p, { purpose });
+        const s = await sessions.create(p, { purpose, read_only });
         return { ...text(`session_id: ${s.id}\nbranch: ${s.branch}\nbase_commit: ${s.base_commit}\nworkspace: /workspace`), structuredContent: { session_id: s.id, branch: s.branch, base_commit: s.base_commit } };
       } catch (e) { return errorResult(e); }
     });

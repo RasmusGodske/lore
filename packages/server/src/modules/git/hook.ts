@@ -6,6 +6,7 @@
  * token in the URL. See spec 03-git-model.md.
  *
  * pre-receive enforces:
+ *   0. A read-only session may not push at all.
  *   1. Only session branches may be pushed.
  *   2. A session may only push its own branch.
  *   3. No history rewriting on the session branch, no deletion.
@@ -25,6 +26,7 @@ import fs from "node:fs";
 import { checkPush, planLanding, type RefUpdate } from "./hook-rules";
 
 const session = process.env.REMOTE_USER ?? "";
+const readOnly = process.env.LORE_SESSION_READ_ONLY === "1";
 const mode = process.argv[2] ?? "pre-receive";
 const remoteUrl = process.env.LORE_REMOTE_URL || "";
 const HELPER = '!f() { echo "username=$LORE_REMOTE_USERNAME"; echo "password=$LORE_REMOTE_TOKEN"; }; f';
@@ -90,7 +92,7 @@ if (remoteUrl) {
   }
 }
 
-const verdict = checkPush({ session, updates, main: mainSha, isAncestor });
+const verdict = checkPush({ session, updates, main: mainSha, isAncestor, readOnly });
 if (!verdict.ok) { for (const l of verdict.messages) say(l); process.exit(1); }
 
 // With a remote, the landing is the push to it; only say "accepted" once that has happened.

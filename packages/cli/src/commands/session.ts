@@ -6,7 +6,8 @@ import type { Session } from "../client.js";
 
 const HELP = `usage: lore session <command>
 
-  create [--purpose TEXT]                     create a session, print its id
+  create [--purpose TEXT] [--read-only]       create a session, print its id
+                                              --read-only refuses every push from it
   list [--all] [--mine] [--user ID] [--since 2026-09-04]
                                               list sessions (active by default)
   show [ID]                                   show one session
@@ -22,8 +23,8 @@ export async function session(args: string[]) {
   const [sub, ...rest] = args;
   switch (sub) {
     case "create": {
-      const { values } = parse(rest, { purpose: { type: "string" }, json: { type: "boolean" } });
-      const s = await makeContext().client.createSession({ purpose: values.purpose });
+      const { values } = parse(rest, { purpose: { type: "string" }, "read-only": { type: "boolean" }, json: { type: "boolean" } });
+      const s = await makeContext().client.createSession({ purpose: values.purpose, read_only: values["read-only"] || undefined });
       if (wantsJson(values.json) && values.json) printJson(s); else process.stdout.write(s.id + "\n");
       return;
     }
