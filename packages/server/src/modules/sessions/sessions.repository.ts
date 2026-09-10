@@ -7,7 +7,7 @@ export type SessionState = "created" | "active" | "closed" | "expired" | "failed
 export interface SessionRow {
   id: string; state: SessionState; branch: string; container_id: string | null; workspace: string;
   base_commit: string | null; git_token_hash: string; user_id: string; token_id: string; created_ip: string | null;
-  purpose: string | null; created_at: string; last_activity_at: string;
+  purpose: string | null; read_only: number; created_at: string; last_activity_at: string;
   closed_at: string | null; close_reason: string | null;
 }
 
@@ -22,12 +22,12 @@ const SELECT = `SELECT s.*, u.name AS user_name, t.label AS token_label
 export class SessionsRepository {
   constructor(private readonly db: DatabaseService) {}
 
-  insert(r: Pick<SessionRow, "id" | "branch" | "workspace" | "git_token_hash" | "user_id" | "token_id" | "created_ip" | "purpose">): void {
+  insert(r: Pick<SessionRow, "id" | "branch" | "workspace" | "git_token_hash" | "user_id" | "token_id" | "created_ip" | "purpose" | "read_only">): void {
     const ts = now();
     this.db.conn.prepare(`INSERT INTO sessions
-      (id, state, branch, workspace, git_token_hash, user_id, token_id, created_ip, purpose, created_at, last_activity_at)
-      VALUES (?, 'created', ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .run(r.id, r.branch, r.workspace, r.git_token_hash, r.user_id, r.token_id, r.created_ip, r.purpose, ts, ts);
+      (id, state, branch, workspace, git_token_hash, user_id, token_id, created_ip, purpose, read_only, created_at, last_activity_at)
+      VALUES (?, 'created', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(r.id, r.branch, r.workspace, r.git_token_hash, r.user_id, r.token_id, r.created_ip, r.purpose, r.read_only, ts, ts);
   }
 
   get(id: string): SessionRecord | undefined {

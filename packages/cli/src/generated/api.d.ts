@@ -339,6 +339,8 @@ export interface components {
         CreateSessionDto: {
             /** @description What this session is for, one line */
             purpose?: string;
+            /** @description Refuse every push from this session; it may read but not write */
+            read_only?: boolean;
         };
         SessionDto_Output: {
             id: string;
@@ -350,6 +352,7 @@ export interface components {
             user_id: string;
             token_label: string;
             purpose: string | null;
+            read_only: boolean;
             base_commit: string | null;
             created_at: string;
             last_activity_at: string;

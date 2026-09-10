@@ -101,10 +101,10 @@ export function buildTools(deps: ToolDeps): ToolDefinition[] {
       name: "lore_session_create",
       title: "Create knowledge-base session",
       description: CREATE_DESCRIPTION,
-      inputSchema: { type: "object", properties: { purpose: { type: "string", maxLength: 500, description: "What this session is for, in one line." } } },
-      handler: async ({ purpose }) => {
+      inputSchema: { type: "object", properties: { purpose: { type: "string", maxLength: 500, description: "What this session is for, in one line." }, read_only: { type: "boolean", description: "Refuse every push from this session; it may read the knowledge base but not write to it." } } },
+      handler: async ({ purpose, read_only }) => {
         try {
-          const s = await client.createSession({ purpose: typeof purpose === "string" ? purpose : undefined });
+          const s = await client.createSession({ purpose: typeof purpose === "string" ? purpose : undefined, read_only: typeof read_only === "boolean" ? read_only : undefined });
           return { ...text(`session_id: ${s.id}\nbranch: ${s.branch}\nbase_commit: ${s.base_commit}\nworkspace: /workspace`), structuredContent: { session_id: s.id, branch: s.branch, base_commit: s.base_commit } };
         } catch (e) { return errorResult(e); }
       },

@@ -883,6 +883,10 @@
             "description": "What this session is for, one line",
             "type": "string",
             "maxLength": 500
+          },
+          "read_only": {
+            "description": "Refuse every push from this session; it may read but not write",
+            "type": "boolean"
           }
         }
       },
@@ -919,6 +923,9 @@
             "type": "string",
             "nullable": true
           },
+          "read_only": {
+            "type": "boolean"
+          },
           "base_commit": {
             "type": "string",
             "nullable": true
@@ -946,6 +953,7 @@
           "user_id",
           "token_label",
           "purpose",
+          "read_only",
           "base_commit",
           "created_at",
           "last_activity_at",

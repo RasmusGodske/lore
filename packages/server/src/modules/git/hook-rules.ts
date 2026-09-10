@@ -10,6 +10,8 @@ export interface PushCheckInput {
   /** Current main sha, or null if the repo has no main. */
   main: string | null;
   isAncestor: (ancestor: string, descendant: string) => boolean;
+  /** A read-only session may not push at all; set when the session was created. */
+  readOnly?: boolean;
 }
 
 export interface Verdict { ok: boolean; messages: string[] }
@@ -17,8 +19,9 @@ export interface Verdict { ok: boolean; messages: string[] }
 export const MERGE_HINT = "run: git fetch origin && git merge origin/main   then commit and push again.";
 
 export function checkPush(input: PushCheckInput): Verdict {
-  const { session, updates, main, isAncestor } = input;
+  const { session, updates, main, isAncestor, readOnly } = input;
   if (!session) return { ok: false, messages: ["no session identity on this push; refusing."] };
+  if (readOnly) return { ok: false, messages: [`session '${session}' is read-only; it may read the knowledge base but not push to it.`] };
   const own = `refs/heads/session/${session}`;
   const messages: string[] = [];
 

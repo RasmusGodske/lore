@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   token_id TEXT NOT NULL REFERENCES tokens(id),
   created_ip TEXT,
   purpose TEXT,
+  read_only INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,
   last_activity_at TEXT NOT NULL,
   closed_at TEXT,
@@ -116,7 +117,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
 /** Column -> DDL, per table. Add here when a column is added to SCHEMA after first release. Runs before indexes. */
 export const MIGRATION_COLUMNS: Record<string, Record<string, string>> = {
-  sessions: { created_ip: "TEXT" },
+  sessions: { created_ip: "TEXT", read_only: "INTEGER NOT NULL DEFAULT 0" },
   audit_events: {
     user_id: "TEXT", token_id: "TEXT", remote_ip: "TEXT",
     stdin_bytes: "INTEGER", stdin_head: "TEXT", truncated: "INTEGER NOT NULL DEFAULT 0",

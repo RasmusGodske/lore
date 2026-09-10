@@ -15,7 +15,7 @@ export interface ExecOptions { cwd?: string; timeoutMs?: number; stdin?: Readabl
 
 export const toSessionDto = (r: SessionRecord): SessionDto => ({
   id: r.id, state: r.state, branch: r.branch, user: r.user_name, user_id: r.user_id, token_label: r.token_label,
-  purpose: r.purpose, base_commit: r.base_commit,
+  purpose: r.purpose, read_only: !!r.read_only, base_commit: r.base_commit,
   created_at: r.created_at, last_activity_at: r.last_activity_at, closed_at: r.closed_at, close_reason: r.close_reason,
 });
 
@@ -50,7 +50,7 @@ export class SessionsService {
     return this.repo.list(opts).map(toSessionDto);
   }
 
-  async create(p: Principal, meta: { purpose?: string } = {}): Promise<SessionDto> {
+  async create(p: Principal, meta: { purpose?: string; read_only?: boolean } = {}): Promise<SessionDto> {
     await this.docker.ping();
     await this.remote.refresh("session"); // a session starts from the truth, which may be the remote
     const id = shortId(6);
@@ -58,12 +58,13 @@ export class SessionsService {
     this.repo.insert({
       id, branch: `session/${id}`, workspace: this.config.workspacePath(id), git_token_hash: hashSecret(gitToken),
       user_id: p.user.id, token_id: p.token.id, created_ip: p.ip, purpose: meta.purpose ?? null,
+      read_only: meta.read_only ? 1 : 0,
     });
     try {
       const { baseCommit } = await this.git.prepareWorkspace(id, gitToken, p.user.name);
       const containerId = await this.docker.startSandbox(id);
       this.repo.setState(id, "active", { base_commit: baseCommit, container_id: containerId });
-      this.audit.record({ session_id: id, op: "create", ...this.actor(p), extra: { purpose: meta.purpose, base_commit: baseCommit } });
+      this.audit.record({ session_id: id, op: "create", ...this.actor(p), extra: { purpose: meta.purpose, base_commit: baseCommit, read_only: meta.read_only ?? false } });
       this.log.log(`session ${id} created for ${p.user.name}/${p.token.label}`);
       return this.get(id);
     } catch (e) {
