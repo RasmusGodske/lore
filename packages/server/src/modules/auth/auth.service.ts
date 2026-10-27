@@ -31,14 +31,17 @@ export class AuthService {
   }
 
   /**
-   * The trusted header decides when a trusted proxy sent it; from anywhere else its presence is
-   * refused outright. Without it, the bearer token decides.
+   * From anywhere but a trusted proxy, the trusted header's presence is refused outright. From a
+   * trusted proxy, a lore token beside it still decides (so an agent keeps its own token's
+   * attribution through the proxy, and a revoked one stays refused); any other bearer value,
+   * such as the proxy's own credential passed through, is ignored and the header decides.
+   * Without the header, the bearer token decides.
    */
   authenticate(c: Credentials): Principal {
     if (this.trustedHeader && c.identity !== undefined) {
       if (!this.isTrustedProxy(c.peer)) throw authError(`the ${this.trustedHeader} header is only accepted from a trusted proxy, and this request came from ${c.peer || "an unknown address"}`);
       if (typeof c.identity !== "string") throw authError(`the ${this.trustedHeader} header was sent more than once`);
-      if (c.identity.trim()) return this.fromIdentity(c.identity, c.ip);
+      if (c.identity.trim() && !TokensService.looksLikeToken(c.bearer)) return this.fromIdentity(c.identity, c.ip);
     }
     return this.fromBearer(c.bearer, c.ip);
   }

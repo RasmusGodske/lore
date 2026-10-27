@@ -80,6 +80,26 @@ describe("trusted identity header", () => {
     refused(() => s.auth.authenticate({ peer: PROXY, ip: PROXY }), /missing bearer token/);
   });
 
+  it("lets a lore token beside the header decide, so an agent keeps its own attribution through the proxy", () => {
+    const p = s.auth.authenticate({ identity: "alice@example.com", bearer, peer: PROXY, ip: PROXY });
+    assert.equal(p.user.name, "bot");
+    assert.equal(p.token.label, "agent");
+  });
+
+  it("refuses a revoked lore token beside the header instead of falling back to the header", () => {
+    const bot = s.users.byName("bot")!;
+    const minted = s.tokens.create(bot.id, "leaked");
+    s.tokens.revoke(minted.row.id);
+    refused(() => s.auth.authenticate({ identity: "alice@example.com", bearer: minted.token, peer: PROXY, ip: PROXY }), /invalid or revoked/);
+    refused(() => s.auth.authenticate({ identity: "alice@example.com", bearer: `lore_${"0".repeat(48)}`, peer: PROXY, ip: PROXY }), /invalid or revoked/);
+  });
+
+  it("ignores a bearer that is not a lore token beside the header, such as the proxy's own credential", () => {
+    const jwt = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhbGljZSJ9.c2ln";
+    assert.equal(s.auth.authenticate({ identity: "alice@example.com", bearer: jwt, peer: PROXY, ip: PROXY }).user.name, "alice@example.com");
+    refused(() => s.auth.authenticate({ bearer: jwt, peer: PROXY, ip: PROXY }), /invalid or revoked/);
+  });
+
   it("keeps bearer tokens working from anywhere", () => {
     assert.equal(s.auth.authenticate({ bearer, peer: ELSEWHERE, ip: ELSEWHERE }).user.name, "bot");
   });
@@ -93,6 +113,8 @@ describe("trusted identity header", () => {
     const p = s.auth.authenticate({ identity: "dave@example.com", peer: PROXY, ip: PROXY });
     s.tokens.revoke(p.token.id);
     refused(() => s.auth.authenticate({ identity: "dave@example.com", peer: PROXY, ip: PROXY }), /revoked/);
+    assert.equal(s.tokens.restore(p.token.id), true, "a revocation made by mistake can be lifted");
+    assert.equal(s.auth.authenticate({ identity: "dave@example.com", peer: PROXY, ip: PROXY }).user.id, p.user.id);
   });
 
   it("the proxy credential is not a bearer token", () => {
