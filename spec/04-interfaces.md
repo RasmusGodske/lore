@@ -43,6 +43,32 @@ mint their own tokens; an admin may also mint one for any user (`POST /users/{id
 `lore user token <user> <label>`), which is how a new user gets their first token. Every HTTP
 API and MCP request carries one as `Authorization: Bearer <token>`; only a hash is stored.
 
+**A trusted identity header** is the second way in, for a deployment that puts lore behind a
+login proxy which authenticates the person and names them in a header. Two settings turn it
+on, always together: `LORE_AUTH_TRUSTED_HEADER` (the header, e.g. `X-Forwarded-Email`) and
+`LORE_AUTH_TRUSTED_PROXIES` (addresses and CIDRs, separated by commas or spaces). The rules:
+
+- A request whose connecting peer is in the list and which carries the header is the user it
+  names: the value trimmed and lowercased, which must be a valid user name (letters, digits,
+  `.`, `_`, `-`, `@`, `+`, so an e-mail address is one). A user not seen before is created on
+  the spot, without the admin flag; an admin promotes them like any other user.
+- The same header from any other peer is refused with 401 (code 101), even if a valid bearer
+  token comes with it. It is never trusted and never ignored, so a misconfigured proxy list
+  shows up at once instead of quietly falling back.
+- Without the header (or with it empty), the bearer token decides, from anywhere.
+- The peer is the address of the TCP connection, never `X-Forwarded-For`. That header still
+  supplies the client IP recorded in the audit log.
+- The person acts through a **proxy credential**: a token row labelled `proxy`, one per user,
+  created with them, with no plaintext and a hash no secret can produce. The audit log
+  therefore attributes sessions and commands to user and token exactly as for a bearer token.
+  Revoking that credential refuses the user through the proxy; access itself is the proxy's
+  business.
+
+It applies to every authenticated route, the HTTP API and MCP alike, and to nothing on the git
+route, whose per-session token is unchanged. The mode is only as safe as the network: the proxy
+must be the only route to lore, and the trusted list must name the proxy's exact address,
+never a range that includes sandboxes (`lore-net`), which can reach the orchestrator.
+
 **Permissions** are the admin flag plus ownership, nothing else. Every token may create
 sessions, list and show any session, and read any audit log. Running commands in a session
 or closing it is allowed only for its owner — the user behind the token that created it —
@@ -157,7 +183,8 @@ a timeout with a clear error is simpler and sufficient. The full contract is the
 document at `/docs/openapi.json`, committed as `openapi.json`; the CLI's types are generated
 from it.
 
-Authentication: bearer token on every request (see above), except the git route, which is
+Authentication: bearer token on every request, or a trusted proxy's identity header (see
+above), except the git route, which is
 authenticated by the git token in its path. No TLS in the first build; do not expose port
 8080 beyond the internal network until there is.
 

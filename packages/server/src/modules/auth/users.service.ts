@@ -9,9 +9,12 @@ export interface UserRow { id: string; name: string; is_admin: number; created_a
 export class UsersService {
   constructor(private readonly db: DatabaseService) {}
 
+  /** Lowercase letters, digits, '.', '_', '-', '@' and '+', so an e-mail address is a valid name. */
+  static validName(name: string): boolean { return /^[a-z0-9][a-z0-9._@+-]{0,127}$/.test(name); }
+
   create(name: string, isAdmin: boolean): UserRow {
-    if (!/^[a-z0-9][a-z0-9._-]{0,63}$/.test(name)) {
-      throw badRequest("user name must be lowercase letters, digits, '.', '_' or '-'");
+    if (!UsersService.validName(name)) {
+      throw badRequest("user name must be lowercase letters, digits, '.', '_', '-', '@' or '+'");
     }
     if (this.byName(name)) throw badRequest(`user '${name}' already exists`);
     const row: UserRow = { id: shortId(8), name, is_admin: isAdmin ? 1 : 0, created_at: now() };

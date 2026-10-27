@@ -10,7 +10,7 @@ export const UserSchema = z.object({
 export class UserDto extends zodDto(UserSchema) {}
 
 export class CreateUserDto extends zodDto(z.object({
-  name: z.string().min(1).max(64).describe("Lowercase letters, digits, '.', '_' or '-'"),
+  name: z.string().min(1).max(128).describe("Lowercase letters, digits, '.', '_', '-', '@' or '+'"),
   admin: z.boolean().default(false),
 })) {}
 

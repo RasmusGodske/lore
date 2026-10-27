@@ -36,7 +36,7 @@ export class RemoteService implements OnModuleInit {
   /** Record a landing the hook pushed to the remote, so the log shows the whole story. */
   recordLanding(ok: boolean, error: string | null, durationMs: number) {
     this.push({ at: new Date().toISOString(), ok, duration_ms: durationMs, outcome: ok ? "pushed a landing" : "landing push refused", error, reason: "landing" });
-    if (ok) { this.status.last_success_at = new Date().toISOString(); }
+    if (ok) { this.status.last_success_at = new Date().toISOString(); this.status.last_error = null; this.status.consecutive_failures = 0; }
   }
 
   /**

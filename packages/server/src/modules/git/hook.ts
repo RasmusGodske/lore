@@ -73,6 +73,10 @@ if (mode === "post-receive") {
 // Remote as truth: make local main current before judging, so rule 4 is checked against the
 // remote's main and "fetch and merge origin/main" gives the agent the real state.
 let mainSha = main.ok ? main.out : null;
+if (remoteUrl && process.env.LORE_REMOTE_TOKEN_ERROR) {
+  say(`could not reach the remote repository (${process.env.LORE_REMOTE_TOKEN_ERROR}); nothing was landed. An operator must fix the server's remote token.`);
+  process.exit(1);
+}
 if (remoteUrl) {
   const f = remoteGit(["fetch", "--quiet", remoteUrl, "+refs/heads/main:refs/remotes/lore-remote/main"]);
   if (!f.ok && !/couldn't find remote ref|no such ref/i.test(f.err)) {

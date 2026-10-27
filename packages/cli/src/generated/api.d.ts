@@ -301,7 +301,7 @@ export interface components {
             created_at: string;
         };
         CreateUserDto: {
-            /** @description Lowercase letters, digits, '.', '_' or '-' */
+            /** @description Lowercase letters, digits, '.', '_', '-', '@' or '+' */
             name: string;
             /** @default false */
             admin: boolean;
