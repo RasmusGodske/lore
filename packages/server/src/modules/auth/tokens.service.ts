@@ -30,6 +30,22 @@ export class TokensService {
     return this.db.conn.prepare("SELECT * FROM tokens WHERE token_hash = ? AND revoked_at IS NULL")
       .get(hashSecret(plaintext)) as unknown as TokenRow | undefined;
   }
+  /**
+   * The credential a user acts through when a trusted proxy names them, created on first use.
+   * It has no plaintext: its hash column holds a marker no secret can hash to. Revoking it
+   * refuses that user through the proxy.
+   */
+  proxyCredential(userId: string): TokenRow {
+    const marker = `proxy:${userId}`;
+    const existing = this.db.conn.prepare("SELECT * FROM tokens WHERE token_hash = ?").get(marker) as unknown as TokenRow | undefined;
+    if (existing) return existing;
+    const row: TokenRow = { id: shortId(8), user_id: userId, label: TokensService.PROXY_LABEL, token_hash: marker, created_at: now(), last_used_at: null, revoked_at: null };
+    this.db.conn.prepare("INSERT INTO tokens (id, user_id, label, token_hash, created_at) VALUES (?, ?, ?, ?, ?)")
+      .run(row.id, row.user_id, row.label, row.token_hash, row.created_at);
+    return row;
+  }
+  static readonly PROXY_LABEL = "proxy";
+
   touch(id: string) { this.db.conn.prepare("UPDATE tokens SET last_used_at = ? WHERE id = ?").run(now(), id); }
   revoke(id: string): boolean {
     return this.db.conn.prepare("UPDATE tokens SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL").run(now(), id).changes > 0;

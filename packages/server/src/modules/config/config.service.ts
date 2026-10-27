@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 
@@ -35,8 +36,24 @@ export const EnvSchema = z.object({
    */
   LORE_REMOTE_URL: z.preprocess(blankToUndefined, z.string().url().optional()),
   LORE_REMOTE_TOKEN: z.preprocess(blankToUndefined, z.string().optional()),
+  /** The path of a file holding the remote's token, read at every fetch and push so a rotated token is picked up. */
+  LORE_REMOTE_TOKEN_FILE: z.preprocess(blankToUndefined, z.string().optional()),
   LORE_REMOTE_USERNAME: z.string().default("lore"),
   LORE_REMOTE_REFRESH_MINUTES: num(5),
+  /**
+   * Trusted identity header: a login proxy in front of lore authenticates the person and names
+   * them in this header. Honoured only on requests whose peer address is in the proxy list.
+   */
+  LORE_AUTH_TRUSTED_HEADER: z.preprocess(blankToUndefined, z.string().regex(/^[A-Za-z0-9-]+$/, "must be an HTTP header name").optional()),
+  /** Addresses or CIDRs, separated by commas or spaces, allowed to set the trusted header. */
+  LORE_AUTH_TRUSTED_PROXIES: z.preprocess(blankToUndefined, z.string().optional()),
+}).superRefine((env, ctx) => {
+  if (env.LORE_REMOTE_TOKEN && env.LORE_REMOTE_TOKEN_FILE) {
+    ctx.addIssue({ code: "custom", path: ["LORE_REMOTE_TOKEN_FILE"], message: "set LORE_REMOTE_TOKEN or LORE_REMOTE_TOKEN_FILE, not both" });
+  }
+  if (!env.LORE_AUTH_TRUSTED_HEADER !== !env.LORE_AUTH_TRUSTED_PROXIES) {
+    ctx.addIssue({ code: "custom", path: ["LORE_AUTH_TRUSTED_PROXIES"], message: "LORE_AUTH_TRUSTED_HEADER and LORE_AUTH_TRUSTED_PROXIES are set together or not at all" });
+  }
 });
 export type Env = z.infer<typeof EnvSchema>;
 
@@ -56,9 +73,23 @@ export class ConfigService {
   hostWorkspacePath(id: string) { return path.join(this.hostDataDir, "sessions", id); }
   get idleTimeoutMs() { return this.env.LORE_IDLE_TIMEOUT_HOURS * 3_600_000; }
   get reaperIntervalMs() { return this.env.LORE_REAPER_INTERVAL_MINUTES * 60_000; }
-  get remote(): { url: string; username: string; token: string } | null {
+  get remote(): { url: string; username: string } | null {
     const url = this.env.LORE_REMOTE_URL;
-    return url ? { url, username: this.env.LORE_REMOTE_USERNAME, token: this.env.LORE_REMOTE_TOKEN ?? "" } : null;
+    return url ? { url, username: this.env.LORE_REMOTE_USERNAME } : null;
+  }
+  /**
+   * The remote's token, read now: from LORE_REMOTE_TOKEN_FILE when that is set (fresh at every
+   * call, so a rotated file is picked up), else LORE_REMOTE_TOKEN, else empty (a remote that
+   * needs no credential). A token file that is missing or empty throws, naming the file.
+   */
+  remoteToken(): string {
+    const file = this.env.LORE_REMOTE_TOKEN_FILE;
+    if (!file) return this.env.LORE_REMOTE_TOKEN ?? "";
+    let token: string;
+    try { token = fs.readFileSync(file, "utf8").trim(); }
+    catch { throw new Error(`no remote token: LORE_REMOTE_TOKEN_FILE ${file} cannot be read`); }
+    if (!token) throw new Error(`no remote token: LORE_REMOTE_TOKEN_FILE ${file} is empty`);
+    return token;
   }
   gitRemoteUrl(gitToken: string) { return `http://${this.env.LORE_SERVER_HOST}:${this.env.LORE_PORT}/git/${gitToken}/knowledge.git`; }
 }

@@ -13,7 +13,10 @@ Also owns the remote: when `LORE_REMOTE_URL` is set, that repository is the sour
 sandbox fetches, a periodic sweep, on request), never forcing anything and reporting divergence
 instead. The hook lands on the remote itself: fetch, check the rules against the remote's
 `main`, push, then accept. The token goes to git through a credential helper and never appears
-in a URL, a log, or the API.
+in a URL, a log, or the API. It is read at each fetch and push, from `LORE_REMOTE_TOKEN_FILE`
+when that is set, so a rotated file is picked up without a restart; a missing or empty file
+fails that attempt with an error naming the file (the remote status's last error, and the
+hook's refusal to the agent).
 
 Public surface: `GitModule`, `GitRepoService`, `PushLockService`, `MirrorService`.
 

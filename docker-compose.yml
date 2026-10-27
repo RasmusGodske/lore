@@ -21,7 +21,10 @@ services:
       LORE_LOG_LEVEL: ${LORE_LOG_LEVEL:-info}
       LORE_REMOTE_URL: ${LORE_REMOTE_URL:-}
       LORE_REMOTE_TOKEN: ${LORE_REMOTE_TOKEN:-}
+      LORE_REMOTE_TOKEN_FILE: ${LORE_REMOTE_TOKEN_FILE:-}
       LORE_REMOTE_USERNAME: ${LORE_REMOTE_USERNAME:-lore}
+      LORE_AUTH_TRUSTED_HEADER: ${LORE_AUTH_TRUSTED_HEADER:-}
+      LORE_AUTH_TRUSTED_PROXIES: ${LORE_AUTH_TRUSTED_PROXIES:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${LORE_HOST_DATA_DIR:-${PWD}/data}:/srv/lore

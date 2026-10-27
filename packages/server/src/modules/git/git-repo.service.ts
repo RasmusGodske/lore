@@ -92,10 +92,10 @@ export class GitRepoService implements OnModuleInit {
     return r.code === 0 ? r.stdout.trim() : null;
   }
 
-  /** Environment for git commands that talk to the remote: credentials via a helper, never in argv. */
+  /** Environment for git commands that talk to the remote: credentials via a helper, never in argv. Throws if the token cannot be read. */
   private remoteEnv(): NodeJS.ProcessEnv {
     const r = this.config.remote!;
-    return { LORE_REMOTE_USERNAME: r.username, LORE_REMOTE_TOKEN: r.token, GIT_TERMINAL_PROMPT: "0" };
+    return { LORE_REMOTE_USERNAME: r.username, LORE_REMOTE_TOKEN: this.config.remoteToken(), GIT_TERMINAL_PROMPT: "0" };
   }
   private static readonly CREDENTIAL_HELPER = '!f() { echo "username=$LORE_REMOTE_USERNAME"; echo "password=$LORE_REMOTE_TOKEN"; }; f';
 

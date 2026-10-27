@@ -215,7 +215,8 @@ state of `main`.
 
 lore runs standalone, its own bare repository being the knowledge base, or with a remote:
 a git repository elsewhere, typically on GitHub, configured with `LORE_REMOTE_URL` and
-`LORE_REMOTE_TOKEN`. With a remote, that repository is the truth and lore's is a copy kept
+a token: `LORE_REMOTE_TOKEN`, or `LORE_REMOTE_TOKEN_FILE`, the path of a file holding it
+(exactly one of the two; both is a boot error). With a remote, that repository is the truth and lore's is a copy kept
 current:
 
 - Before a session is created, when a sandbox fetches, at boot, on a periodic sweep, and on an
@@ -237,6 +238,10 @@ current:
   reported as diverged and an operator reconciles it.
 
 The credential is deployment configuration, handed to git through a credential helper; it
-never enters the database, a backup, a URL, a log, or the API. `GET /admin/remote` reports the
+is read at the moment of each fetch and push (from the file, trimmed, when the file setting is
+used), so a token the deployment rotates is used without a restart. A token file that is
+missing or empty fails that fetch or push with an error naming the file, which is what
+`GET /admin/remote` reports as the last error and what a refused landing tells the agent. No
+token setting at all means no credential, for a remote that needs none. It never enters the database, a backup, a URL, a log, or the API. `GET /admin/remote` reports the
 state, `GET /admin/remote/log` the recent fetches and landings, and `POST /admin/remote/sync`
 fetches now. Nothing in the system depends on a remote existing.

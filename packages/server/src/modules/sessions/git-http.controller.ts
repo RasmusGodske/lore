@@ -65,7 +65,7 @@ export class GitHttpController {
       HTTP_CONTENT_ENCODING: (req.headers["content-encoding"] as string) ?? "",
       GIT_HTTP_MAX_REQUEST_BUFFER: "100M",
       // The hook lands on the remote itself when one is configured.
-      ...(this.config.remote ? { LORE_REMOTE_URL: this.config.remote.url, LORE_REMOTE_USERNAME: this.config.remote.username, LORE_REMOTE_TOKEN: this.config.remote.token } : {}),
+      ...(isPush ? this.hookRemoteEnv() : {}),
     };
     const started = Date.now();
 
@@ -108,7 +108,7 @@ export class GitHttpController {
         }
         const mainAfter = await this.repo.refSha("refs/heads/main");
         if (accepted && mainAfter !== mainBefore) await this.repo.afterLanding();
-        if (this.remote.configured) this.remote.recordLanding(accepted, accepted ? null : "rejected by the hook", Date.now() - started);
+        if (this.remote.configured) this.remote.recordLanding(accepted, accepted ? null : env.LORE_REMOTE_TOKEN_ERROR ?? "rejected by the hook", Date.now() - started);
         this.audit.record({
           session_id: session.id, op: "push", user_id: session.user_id, token_id: session.token_id, remote_ip: req.ip,
           extra: { branch: session.branch, result: accepted ? "accepted" : "rejected", before: branchBefore, after: branchAfter, main_before: mainBefore, main_after: mainAfter },
@@ -121,5 +121,14 @@ export class GitHttpController {
       finished();
     });
     await settled;
+  }
+
+  /** The remote's coordinates for the hook, with the token read now; a token that cannot be read reaches the hook as an error to refuse with. */
+  private hookRemoteEnv(): NodeJS.ProcessEnv {
+    const r = this.config.remote;
+    if (!r) return {};
+    const base = { LORE_REMOTE_URL: r.url, LORE_REMOTE_USERNAME: r.username };
+    try { return { ...base, LORE_REMOTE_TOKEN: this.config.remoteToken() }; }
+    catch (e) { return { ...base, LORE_REMOTE_TOKEN_ERROR: e instanceof Error ? e.message : String(e) }; }
   }
 }

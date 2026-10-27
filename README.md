@@ -54,6 +54,14 @@ another user, `lore admin user token alice claude-ai`), so it can be revoked on 
 lives in Anthropic's connector configuration rather than on a machine you control, and every
 session it opens is attributed to its user in the audit log.
 
+### Behind a login proxy
+
+A deployment that already signs people in with a proxy can let it vouch for them: set
+`LORE_AUTH_TRUSTED_HEADER` to the header that carries the identity and
+`LORE_AUTH_TRUSTED_PROXIES` to the proxy's address, and the person it names is the user, created
+on first sight and named in the audit log. Tokens keep working beside it. The proxy must be the
+only route to the server; see [`deploy/README.md`](deploy/README.md), section 4.1.
+
 Everything below is for running or developing the server.
 
 ```
@@ -154,7 +162,7 @@ with the same version. See `.github/workflows/release.yml`.
 ## Use a GitHub repository as the source of truth
 
 Standalone, lore's own repository is the knowledge base. Set `LORE_REMOTE_URL` and
-`LORE_REMOTE_TOKEN` and a git repository, for example on GitHub, becomes the source of truth
+`LORE_REMOTE_TOKEN` (or `LORE_REMOTE_TOKEN_FILE`, for a token something else rotates) and a git repository, for example on GitHub, becomes the source of truth
 instead: every session starts from its `main`, every landing is a push to it, and a change
 made on GitHub is what the next session sees. That is an off-site copy that is current within
 seconds, and GitHub's file browser and history as the way to look at the knowledge.

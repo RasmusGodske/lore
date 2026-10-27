@@ -748,8 +748,8 @@
           "name": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 64,
-            "description": "Lowercase letters, digits, '.', '_' or '-'"
+            "maxLength": 128,
+            "description": "Lowercase letters, digits, '.', '_', '-', '@' or '+'"
           },
           "admin": {
             "default": false,

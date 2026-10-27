@@ -75,6 +75,55 @@ lore login https://lore.example.com --token <token>
 claude mcp add --transport http lore https://lore.example.com/mcp --header "Authorization: Bearer <token>"
 ```
 
+### 4.1 How people and agents sign in
+
+**Tokens** are the default and always work. Every user mints their own (`lore token create
+<label>`), an admin mints one for anybody (`lore admin user token <user> <label>`), and each is
+revoked on its own. **claude.ai** uses a token too, sent as a custom header from Anthropic's
+side; the steps are in the top-level README, *Connect claude.ai*.
+
+**A login proxy** is the alternative when lore sits behind something that already signs
+people in and passes their identity on in a request header: a single-sign-on proxy, an access
+gateway, a mesh VPN that names the peer, or an MCP gateway. Tell lore which header carries the
+identity and which addresses may set it, in `/srv/lore/.env`, and restart:
+
+```
+LORE_AUTH_TRUSTED_HEADER=X-Forwarded-Email
+LORE_AUTH_TRUSTED_PROXIES=172.18.0.1
+```
+
+A request from a listed address that carries the header is the user it names (lowercased; an
+e-mail address is a valid user name), created on first sight without admin rights, and every
+session and command it runs is attributed to that user in the audit log, under a token labelled
+`proxy`. Promote someone with `lore admin user ...` as usual; to shut one person out at lore's
+end, revoke their `proxy` token. Requests without the header still need a bearer token, so
+your agents' tokens and claude.ai keep working beside it. The header arriving from any address
+not on the list is refused with 401, never trusted and never ignored.
+
+The list is the address the orchestrator sees the proxy connect from, not the proxy's public
+address. With the compose file, a proxy on the host (Caddy, say) arrives through Docker's port
+mapping as the gateway of the compose network. To find it, send one request with the header
+and read the refusal, which names the address:
+
+```bash
+curl -s http://127.0.0.1:8480/me -H 'X-Forwarded-Email: probe@example.com'
+# {"error":{"code":101,"message":"the x-forwarded-email header is only accepted from a trusted proxy, and this request came from 172.18.0.1"}}
+```
+
+**The caveat: the proxy must be the only route in.** lore believes whatever a listed address
+tells it, so anyone who can reach lore from that address, or reach lore some other way while
+the header is honoured from somewhere they control, can be anybody. Concretely:
+
+- Bind the orchestrator to localhost (`LORE_PUBLIC_BIND=127.0.0.1`, the default here) or to a
+  network only the proxy is on, and make sure the proxy overwrites or strips the header on
+  every request it forwards, so a client cannot supply its own.
+- List exact addresses, not ranges. Never list the sandbox network (`lore-net`) or a range
+  containing it: sandboxes can reach the orchestrator, and an agent could then claim to be
+  anyone.
+- Anything else on the host that can open a connection to port 8480 arrives from the same
+  gateway address as the proxy. On this VM that is only you and the services you run; keep it
+  that way, or put the proxy on its own Docker network and list its address there.
+
 ## 5. Use a GitHub repository as the source of truth
 
 lore runs in one of two ways:
@@ -133,6 +182,33 @@ cd /srv/lore && docker compose up -d
 
 The token is handed to git through a credential helper at fetch and push time; it never
 appears in a URL, a log line, the database, a backup, or the API.
+
+**A token that rotates.** If something else keeps the token current, for example a GitHub App
+installation token renewed every hour, or a secret your container platform mounts and
+refreshes, give lore the file instead of the value:
+
+```
+LORE_REMOTE_URL=https://github.com/your-org/knowledge.git
+LORE_REMOTE_TOKEN_FILE=/run/secrets/lore-remote-token
+```
+
+lore reads the file at every fetch and push, trims surrounding whitespace, and uses what is
+there, so a renewed token takes effect at the next fetch without a restart. Set one of
+`LORE_REMOTE_TOKEN` and `LORE_REMOTE_TOKEN_FILE`, not both; with both the server refuses to
+start. The path is inside the orchestrator container, so mount the file there, for example
+with a `docker-compose.override.yml` beside the compose file:
+
+```yaml
+services:
+  orchestrator:
+    volumes:
+      - /etc/lore/remote-token:/run/secrets/lore-remote-token:ro
+```
+
+Keep it out of the data directory, which is backed up. If the file is missing or empty, that
+fetch or push fails, `lore admin remote status` shows `no remote token: LORE_REMOTE_TOKEN_FILE
+/run/secrets/lore-remote-token cannot be read` (or `is empty`) as the last error, and an
+agent's push is refused with the same words; nothing lands until the file is back.
 
 ### 5.4 Check it
 
@@ -202,7 +278,8 @@ Sandboxes sit on an internal Docker network with no route out, and the firewall 
 anything arriving from that bridge (`lore-net`) at the host itself, so a sandbox cannot reach
 the host's SSH or Caddy through the bridge gateway either. Verified from inside a session:
 the internet, the public address, and the gateway are all unreachable. Every request carries a
-bearer token; the git endpoint carries a per-session token in its URL. The orchestrator
+bearer token, or, with a login proxy configured (4.1), the proxy's identity header from the
+proxy's own address; the git endpoint carries a per-session token in its URL. The orchestrator
 itself runs with the Docker socket mounted, which is root-equivalent on the host; this is
 the documented trade-off in `spec/01-architecture.md`, acceptable because only your own
 agents can reach it and nothing they run executes outside a sandbox.
