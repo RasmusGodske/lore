@@ -51,18 +51,23 @@ on, always together: `LORE_AUTH_TRUSTED_HEADER` (the header, e.g. `X-Forwarded-E
 - A request whose connecting peer is in the list and which carries the header is the user it
   names: the value trimmed and lowercased, which must be a valid user name (letters, digits,
   `.`, `_`, `-`, `@`, `+`, so an e-mail address is one). A user not seen before is created on
-  the spot, without the admin flag; an admin promotes them like any other user.
+  the spot, without the admin flag. To make someone an admin, create them with the flag
+  before their first visit, or grant it afterwards with `lore-admin user admin <name>`.
 - The same header from any other peer is refused with 401 (code 101), even if a valid bearer
   token comes with it. It is never trusted and never ignored, so a misconfigured proxy list
   shows up at once instead of quietly falling back.
 - Without the header (or with it empty), the bearer token decides, from anywhere.
+- With the header from a trusted proxy *and* a lore token (`lore_` and 48 hex digits) beside it,
+  the token decides, so an agent whose requests pass through the proxy keeps its own token's
+  attribution, and a revoked token is still a 401 rather than a fallback to the header. A bearer
+  value that is not a lore token, such as the proxy's own credential passed through, is ignored.
 - The peer is the address of the TCP connection, never `X-Forwarded-For`. That header still
   supplies the client IP recorded in the audit log.
 - The person acts through a **proxy credential**: a token row labelled `proxy`, one per user,
   created with them, with no plaintext and a hash no secret can produce. The audit log
   therefore attributes sessions and commands to user and token exactly as for a bearer token.
-  Revoking that credential refuses the user through the proxy; access itself is the proxy's
-  business.
+  Revoking that credential refuses the user through the proxy (`lore-admin token restore <id>`
+  lifts it); access itself is the proxy's business.
 
 It applies to every authenticated route, the HTTP API and MCP alike, and to nothing on the git
 route, whose per-session token is unchanged. The mode is only as safe as the network: the proxy

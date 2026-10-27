@@ -13,7 +13,7 @@ export class TokensService {
 
   /** Mints a token. The plaintext is returned exactly once and never stored. */
   create(userId: string, label: string): { token: string; row: TokenRow } {
-    const token = newSecret("lore");
+    const token = newSecret("lore"); // keep in step with looksLikeToken
     const row: TokenRow = { id: shortId(8), user_id: userId, label, token_hash: hashSecret(token), created_at: now(), last_used_at: null, revoked_at: null };
     this.db.conn.prepare("INSERT INTO tokens (id, user_id, label, token_hash, created_at) VALUES (?, ?, ?, ?, ?)")
       .run(row.id, row.user_id, row.label, row.token_hash, row.created_at);
@@ -45,6 +45,14 @@ export class TokensService {
     return row;
   }
   static readonly PROXY_LABEL = "proxy";
+
+  /** Whether a bearer value has the shape of a token this server mints, valid or not. */
+  static looksLikeToken(bearer: string | undefined): boolean { return !!bearer && /^lore_[0-9a-f]{48}$/.test(bearer); }
+
+  /** Lifts a revocation; for a proxy credential revoked by mistake. */
+  restore(id: string): boolean {
+    return this.db.conn.prepare("UPDATE tokens SET revoked_at = NULL WHERE id = ? AND revoked_at IS NOT NULL").run(id).changes > 0;
+  }
 
   touch(id: string) { this.db.conn.prepare("UPDATE tokens SET last_used_at = ? WHERE id = ?").run(now(), id); }
   revoke(id: string): boolean {

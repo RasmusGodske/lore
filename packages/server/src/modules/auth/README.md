@@ -18,7 +18,8 @@ A revoked token fails authentication immediately.
 Trusted header (spec 04): the header is honoured only when the connecting peer, never a
 forwarded-for header, is in `LORE_AUTH_TRUSTED_PROXIES`; from any other peer its presence is a
 401, whatever else the request carries. A trusted request without it falls back to the bearer
-token. The named user is created on first sight, once, without admin, and acts through one
+token; a trusted request with it and a lore-shaped bearer token is decided by that token (a
+revoked one is a 401, never a fallback), and any other bearer value beside it is ignored. The named user is created on first sight, once, without admin, and acts through one
 `proxy` credential per user (a token row whose hash is a marker no secret hashes to, so it can
-never be presented as a bearer token); revoking it refuses that user through the proxy. A
-malformed proxy list fails the boot.
+never be presented as a bearer token); revoking it refuses that user through the proxy, and
+`lore-admin token restore` lifts that. A malformed proxy list fails the boot.

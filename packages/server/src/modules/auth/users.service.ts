@@ -23,6 +23,10 @@ export class UsersService {
     return row;
   }
 
+  setAdmin(id: string, isAdmin: boolean): boolean {
+    return this.db.conn.prepare("UPDATE users SET is_admin = ? WHERE id = ?").run(isAdmin ? 1 : 0, id).changes > 0;
+  }
+
   list(): UserRow[] {
     return this.db.conn.prepare("SELECT * FROM users ORDER BY created_at").all() as unknown as UserRow[];
   }

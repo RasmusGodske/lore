@@ -95,9 +95,13 @@ LORE_AUTH_TRUSTED_PROXIES=172.18.0.1
 A request from a listed address that carries the header is the user it names (lowercased; an
 e-mail address is a valid user name), created on first sight without admin rights, and every
 session and command it runs is attributed to that user in the audit log, under a token labelled
-`proxy`. Promote someone with `lore admin user ...` as usual; to shut one person out at lore's
-end, revoke their `proxy` token. Requests without the header still need a bearer token, so
-your agents' tokens and claude.ai keep working beside it. The header arriving from any address
+`proxy`. To make someone an admin, create them with `--admin` before their first visit, or
+afterwards run `docker compose exec orchestrator lore-admin user admin <name>`. To shut one
+person out at lore's end, revoke their `proxy` token; `lore-admin token restore <id>` undoes
+that. Requests without the header still need a bearer token, so your agents' tokens and
+claude.ai keep working beside it, and an agent that sends its own lore token through the proxy
+is attributed to that token, not to the header. Any other `Authorization` value the proxy passes
+through beside the header is ignored. The header arriving from any address
 not on the list is refused with 401, never trusted and never ignored.
 
 The list is the address the orchestrator sees the proxy connect from, not the proxy's public
